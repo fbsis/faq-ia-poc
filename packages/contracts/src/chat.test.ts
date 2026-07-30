@@ -23,7 +23,11 @@ describe("chat contracts", () => {
   it("accepts at most six recent conversation messages", () => {
     const history = [
       { role: "user", content: "Não consigo entrar na minha conta." },
-      { role: "assistant", content: "Você ainda tem acesso ao e-mail cadastrado?" }
+      {
+        role: "assistant",
+        content: "Você ainda tem acesso ao e-mail cadastrado?",
+        status: "unanswered"
+      }
     ];
 
     expect(
@@ -40,6 +44,28 @@ describe("chat contracts", () => {
           role: index % 2 === 0 ? "user" : "assistant",
           content: `Message ${index}`
         }))
+      })
+    ).toThrow();
+  });
+
+  it("accepts an outcome only on assistant history messages", () => {
+    expect(() =>
+      askQuestionRequestSchema.parse({
+        question: "Pode tentar novamente?",
+        history: [
+          {
+            role: "assistant",
+            content: "Talvez eu precise de mais explicações.",
+            status: "unanswered"
+          }
+        ]
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      askQuestionRequestSchema.parse({
+        question: "Pode tentar novamente?",
+        history: [{ role: "user", content: "Minha dúvida", status: "unanswered" }]
       })
     ).toThrow();
   });

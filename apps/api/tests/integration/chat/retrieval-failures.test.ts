@@ -63,7 +63,7 @@ integration("chat retrieval failures", () => {
     expect(response).toMatchObject({
       status: "unanswered",
       message:
-        "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+        "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações. Você pode explicar melhor o que está tentando fazer e em qual etapa surgiu a dúvida?"
     });
     const persisted = await pool.query<{ cache_status: string }>(
       "SELECT cache_status FROM interactions WHERE id = $1",

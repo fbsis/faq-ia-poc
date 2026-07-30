@@ -158,7 +158,8 @@ describe("public FAQ chat", () => {
         { role: "user", content: "Como redefino minha senha?" },
         {
           role: "assistant",
-          content: "Você pode redefinir sua senha pela tela de login."
+          content: "Você pode redefinir sua senha pela tela de login.",
+          status: "answered"
         }
       ]
     });

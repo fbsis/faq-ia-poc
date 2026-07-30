@@ -63,6 +63,53 @@ describe("unanswered chat", () => {
     expect(screen.getByText(/encontrei uma possibilidade/i)).toBeVisible();
   });
 
+  it("sends previous unanswered outcomes so repeated misses can be handed to a person", async () => {
+    const requests: Array<{
+      question: string;
+      history?: Array<{ role: string; content: string; status?: string }>;
+    }> = [];
+    server.use(
+      http.post("/api/v1/chat/questions", async ({ request }) => {
+        requests.push(
+          (await request.json()) as {
+            question: string;
+            history?: Array<{ role: string; content: string; status?: string }>;
+          }
+        );
+        return HttpResponse.json({
+          interactionId:
+            requests.length === 1
+              ? "00000000-0000-4000-8000-000000000013"
+              : "00000000-0000-4000-8000-000000000014",
+          status: "unanswered",
+          message:
+            requests.length === 1
+              ? "Você pode explicar melhor?"
+              : "Ainda não encontrei essa informação."
+        });
+      })
+    );
+    renderPage();
+    const input = screen.getByLabelText(/digite sua pergunta/i);
+
+    await userEvent.type(input, "Primeira forma da dúvida");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+    await screen.findByText("Você pode explicar melhor?");
+
+    await userEvent.type(input, "Segunda forma da dúvida");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+    await screen.findByText("Ainda não encontrei essa informação.");
+
+    expect(requests[1]?.history).toEqual([
+      { role: "user", content: "Primeira forma da dúvida" },
+      {
+        role: "assistant",
+        content: "Você pode explicar melhor?",
+        status: "unanswered"
+      }
+    ]);
+  });
+
   it("keeps one failed turn and clears the composer only after a successful retry", async () => {
     let attempts = 0;
     server.use(

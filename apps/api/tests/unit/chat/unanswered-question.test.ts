@@ -57,9 +57,7 @@ function createUseCase(options?: {
     createUnansweredResponse: () =>
       options?.failClarification
         ? Promise.reject(new Error("provider unavailable"))
-        : Promise.resolve(
-            "Não encontrei uma resposta segura. Em qual etapa do cadastro surgiu essa dúvida?"
-          )
+        : Promise.resolve("Em qual etapa do cadastro surgiu essa dúvida?")
   };
   const interactions: InteractionRepository = {
     save: () => Promise.reject(new Error("unanswered must use the atomic recorder"))
@@ -97,7 +95,8 @@ describe("unanswered question handling", () => {
       useCase.execute({ question: "Como concluo meu cadastro?" })
     ).resolves.toMatchObject({
       status: "unanswered",
-      message: "Não encontrei uma resposta segura. Em qual etapa do cadastro surgiu essa dúvida?"
+      message:
+        "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações. Em qual etapa do cadastro surgiu essa dúvida?"
     });
     expect(recorded).toHaveLength(1);
     expect(recorded[0]).toMatchObject({
@@ -128,7 +127,7 @@ describe("unanswered question handling", () => {
     await expect(useCase.execute({ question: "Minha solicitação parou" })).resolves.toMatchObject({
       status: "unanswered",
       message:
-        "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+        "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações. Você pode explicar melhor o que está tentando fazer e em qual etapa surgiu a dúvida?"
     });
     expect(recorded[0]?.cacheStatus).toBe("bypassed");
   });

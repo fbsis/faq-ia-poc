@@ -48,9 +48,9 @@ class ConversationAgentFake implements ConversationAgent {
   rewrittenQuestion = "Como redefino minha senha?";
   response = "Claro! Na tela de login, clique em “Esqueci minha senha”.";
   failResponse = false;
-  unansweredResponse =
-    "Para eu procurar melhor, você pode explicar qual etapa está tentando concluir?";
+  unansweredResponse = "Você pode explicar qual etapa está tentando concluir?";
   failUnansweredResponse = false;
+  unansweredCalls = 0;
 
   rewriteQuestion(): Promise<string> {
     return Promise.resolve(this.rewrittenQuestion);
@@ -63,6 +63,7 @@ class ConversationAgentFake implements ConversationAgent {
   }
 
   createUnansweredResponse(): Promise<string> {
+    this.unansweredCalls += 1;
     return this.failUnansweredResponse
       ? Promise.reject(new Error("provider unavailable"))
       : Promise.resolve(this.unansweredResponse);
@@ -242,13 +243,14 @@ describe("AskQuestion", () => {
   it("asks a contextual clarification when no approved answer is reliable", async () => {
     const search = new SearchFake();
     search.exact = null;
-    const { useCase, conversation } = createUseCase({ search });
+    const { useCase } = createUseCase({ search });
 
     const response = await useCase.execute({ question: "Não está funcionando" });
 
     expect(response).toMatchObject({
       status: "unanswered",
-      message: conversation.unansweredResponse
+      message:
+        "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações. Você pode explicar qual etapa está tentando concluir?"
     });
   });
 
@@ -264,7 +266,59 @@ describe("AskQuestion", () => {
     expect(response).toMatchObject({
       status: "unanswered",
       message:
-        "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+        "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações. Você pode explicar melhor o que está tentando fazer e em qual etapa surgiu a dúvida?"
     });
+  });
+
+  it("hands the conversation to a person after two previous unanswered attempts", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    const conversation = new ConversationAgentFake();
+    const { useCase } = createUseCase({ search, conversation });
+
+    const response = await useCase.execute({
+      question: "Já expliquei de outra forma, como funciona?",
+      history: [
+        { role: "user", content: "Primeira tentativa" },
+        {
+          role: "assistant",
+          content: "Pode explicar melhor?",
+          status: "unanswered"
+        },
+        { role: "user", content: "Segunda tentativa" },
+        {
+          role: "assistant",
+          content: "Em qual etapa?",
+          status: "unanswered"
+        }
+      ]
+    });
+
+    expect(response).toMatchObject({
+      status: "unanswered",
+      message:
+        "Não sei responder essa pergunta porque essa informação não está disponível na nossa base de conhecimento. Uma pessoa da nossa equipe entrará em contato para explicar como isso funciona."
+    });
+    expect(conversation.unansweredCalls).toBe(0);
+  });
+
+  it("resets the handoff counter after an answered turn", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    const conversation = new ConversationAgentFake();
+    const { useCase } = createUseCase({ search, conversation });
+
+    const response = await useCase.execute({
+      question: "Uma nova dúvida desconhecida",
+      history: [
+        { role: "user", content: "Dúvida antiga" },
+        { role: "assistant", content: "Pode explicar?", status: "unanswered" },
+        { role: "user", content: "Pergunta conhecida" },
+        { role: "assistant", content: "Resposta aprovada", status: "answered" }
+      ]
+    });
+
+    expect(response.message).toContain("Talvez eu precise de mais explicações.");
+    expect(conversation.unansweredCalls).toBe(1);
   });
 });
