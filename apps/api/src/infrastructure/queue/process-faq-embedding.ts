@@ -11,11 +11,11 @@ export async function processFaqEmbedding(
   if (!content || content.contentVersion !== job.contentVersion) return;
   try {
     const embedding = await embeddings.embed(content.text);
-    await repository.activateEmbedding(job.faqId, job.contentVersion, embedding);
+    await repository.activateEmbedding(job.faqId, job.contentVersion, embedding, job.resolutionId);
   } catch (error) {
     if (isTransient(error)) throw error;
     const message = error instanceof Error ? error.message : "Unknown embedding failure";
-    await repository.failEmbedding(job.faqId, job.contentVersion, message);
+    await repository.failEmbedding(job.faqId, job.contentVersion, message, job.resolutionId);
   }
 }
 

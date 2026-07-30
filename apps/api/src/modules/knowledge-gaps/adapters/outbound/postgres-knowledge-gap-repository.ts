@@ -1,12 +1,20 @@
+import { createHash } from "node:crypto";
 import type {
+  FaqStatus,
+  GapResolution,
   KnowledgeGap,
   KnowledgeGapDetails,
   KnowledgeGapEvent,
   KnowledgeGapListQuery,
   KnowledgeGapPage
 } from "@faq/contracts";
+import type { PoolClient } from "pg";
 import type { DatabasePool } from "../../../../infrastructure/database/client.js";
-import type { KnowledgeGapRepository } from "../../application/ports.js";
+import { AppError } from "../../../../infrastructure/http/errors.js";
+import type {
+  KnowledgeGapRepository,
+  ResolveKnowledgeGapCommand
+} from "../../application/ports.js";
 
 interface GapRow {
   id: string;
@@ -23,8 +31,25 @@ interface EventRow {
   id: string;
   event_type: KnowledgeGapEvent["type"];
   admin_id: string | null;
+  from_status: KnowledgeGap["status"] | null;
+  to_status: KnowledgeGap["status"] | null;
   reason: string | null;
+  faq_id: string | null;
+  resolution_id: string | null;
   created_at: Date;
+}
+
+interface ResolutionRow {
+  id: string;
+  gap_id: string;
+  mode: GapResolution["mode"];
+  faq_id: string;
+  faq_status: FaqStatus;
+  status: GapResolution["status"];
+  error_code: string | null;
+  request_hash: string | null;
+  created_at: Date;
+  completed_at: Date | null;
 }
 
 const supportedEvents = [
@@ -86,7 +111,7 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
   }
 
   async get(id: string): Promise<KnowledgeGapDetails | null> {
-    const [gap, occurrences, events] = await Promise.all([
+    const [gap, occurrences, events, resolution] = await Promise.all([
       this.pool.query<GapRow & { total_count: string }>(`${gapProjection()} WHERE g.id = $1`, [id]),
       this.pool.query<{ interaction_id: string; raw_question: string; created_at: Date }>(
         `SELECT i.id AS interaction_id, i.raw_question, i.created_at
@@ -97,11 +122,19 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
         [id]
       ),
       this.pool.query<EventRow>(
-        `SELECT id, event_type, admin_id, reason, created_at
+        `SELECT id, event_type, admin_id, from_status, to_status, reason,
+                faq_id, resolution_id, created_at
          FROM knowledge_gap_events
          WHERE gap_id = $1 AND event_type = ANY($2::text[])
          ORDER BY created_at ASC, id ASC`,
         [id, supportedEvents]
+      ),
+      this.pool.query<ResolutionRow>(
+        `${resolutionProjection}
+         WHERE r.gap_id = $1 AND r.faq_id IS NOT NULL
+         ORDER BY r.created_at DESC
+         LIMIT 1`,
+        [id]
       )
     ]);
     const row = gap.rows[0];
@@ -113,8 +146,126 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
         question: item.raw_question,
         occurredAt: item.created_at.toISOString()
       })),
+      ...(resolution.rows[0] ? { currentResolution: toResolution(resolution.rows[0]) } : {}),
       events: events.rows.map(toEvent)
     };
+  }
+
+  async resolve(command: ResolveKnowledgeGapCommand): Promise<GapResolution> {
+    const requestHash = hashResolutionRequest(command);
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const existing = await client.query<ResolutionRow>(
+        `${resolutionProjection}
+         WHERE r.admin_id = $1 AND r.idempotency_key = $2
+         FOR UPDATE OF r`,
+        [command.adminId, command.idempotencyKey]
+      );
+      if (existing.rows[0]) {
+        if (existing.rows[0].request_hash !== requestHash) {
+          throw conflict(
+            "KNOWLEDGE_GAP_IDEMPOTENCY_CONFLICT",
+            "The idempotency key was already used with different resolution data."
+          );
+        }
+        await client.query("COMMIT");
+        return toResolution(existing.rows[0]);
+      }
+
+      const gap = await client.query<{ status: KnowledgeGap["status"]; version: number }>(
+        `SELECT status, version FROM knowledge_gaps WHERE id = $1 FOR UPDATE`,
+        [command.knowledgeGapId]
+      );
+      if (!gap.rows[0]) {
+        throw new AppError("KNOWLEDGE_GAP_NOT_FOUND", "Knowledge gap not found.", 404);
+      }
+      if (gap.rows[0].status !== "open" || gap.rows[0].version !== command.input.expectedVersion) {
+        throw conflict(
+          "KNOWLEDGE_GAP_VERSION_CONFLICT",
+          "The knowledge gap changed before this resolution was submitted."
+        );
+      }
+
+      const contentVersion =
+        command.input.mode === "create"
+          ? await insertFaq(client, command)
+          : await updateFaq(client, command);
+      await replaceAliases(client, command.faqId, command.input.aliases);
+      await client.query(
+        `INSERT INTO knowledge_gap_resolutions
+          (id, gap_id, admin_id, mode, faq_id, faq_content_version,
+           question_snapshot, answer_snapshot, category_id, aliases_snapshot,
+           expected_gap_version, idempotency_key, request_hash, status, created_at)
+         VALUES
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, 'pending', $14)`,
+        [
+          command.resolutionId,
+          command.knowledgeGapId,
+          command.adminId,
+          command.input.mode,
+          command.faqId,
+          contentVersion,
+          command.input.question,
+          command.input.answer,
+          command.input.categoryId,
+          JSON.stringify(command.input.aliases),
+          command.input.expectedVersion,
+          command.idempotencyKey,
+          requestHash,
+          command.createdAt
+        ]
+      );
+      await client.query(
+        `UPDATE knowledge_gaps
+         SET status = 'resolving', resolved_faq_id = $2, version = version + 1
+         WHERE id = $1`,
+        [command.knowledgeGapId, command.faqId]
+      );
+      await client.query(
+        `INSERT INTO knowledge_gap_events
+          (id, gap_id, admin_id, event_type, from_status, to_status,
+           faq_id, resolution_id, created_at)
+         VALUES ($1, $2, $3, 'resolution_started', 'open', 'resolving', $4, $5, $6)`,
+        [
+          command.eventId,
+          command.knowledgeGapId,
+          command.adminId,
+          command.faqId,
+          command.resolutionId,
+          command.createdAt
+        ]
+      );
+      await client.query(
+        `INSERT INTO outbox_messages (id, topic, aggregate_id, payload, created_at)
+         VALUES ($1, 'faq.embedding.prepare', $2, $3::jsonb, $4)`,
+        [
+          command.outboxId,
+          command.faqId,
+          JSON.stringify({
+            faqId: command.faqId,
+            contentVersion,
+            resolutionId: command.resolutionId
+          }),
+          command.createdAt
+        ]
+      );
+      await client.query("COMMIT");
+      return {
+        id: command.resolutionId,
+        knowledgeGapId: command.knowledgeGapId,
+        mode: command.input.mode,
+        faqId: command.faqId,
+        faqStatus: "embedding_pending",
+        status: "pending",
+        createdAt: command.createdAt.toISOString()
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
 
@@ -159,15 +310,145 @@ function toGap(row: GapRow): KnowledgeGap {
 }
 
 function toEvent(row: EventRow): KnowledgeGapEvent {
-  const transition = eventTransition(row.event_type);
+  const transition =
+    row.from_status && row.to_status
+      ? { fromStatus: row.from_status, toStatus: row.to_status }
+      : eventTransition(row.event_type);
   return {
     id: row.id,
     type: row.event_type,
     ...transition,
     adminId: row.admin_id,
     ...(row.reason ? { reason: row.reason } : {}),
+    ...(row.faq_id ? { faqId: row.faq_id } : {}),
+    ...(row.resolution_id ? { resolutionId: row.resolution_id } : {}),
     createdAt: row.created_at.toISOString()
   };
+}
+
+const resolutionProjection = `SELECT
+  r.id,
+  r.gap_id,
+  r.mode,
+  r.faq_id,
+  f.status AS faq_status,
+  r.status,
+  r.error_code,
+  r.request_hash,
+  r.created_at,
+  r.completed_at
+ FROM knowledge_gap_resolutions r
+ JOIN faqs f ON f.id = r.faq_id`;
+
+function toResolution(row: ResolutionRow): GapResolution {
+  return {
+    id: row.id,
+    knowledgeGapId: row.gap_id,
+    mode: row.mode,
+    faqId: row.faq_id,
+    faqStatus: row.faq_status,
+    status: row.status,
+    ...(row.error_code ? { errorCode: row.error_code } : {}),
+    createdAt: row.created_at.toISOString(),
+    ...(row.completed_at ? { completedAt: row.completed_at.toISOString() } : {})
+  };
+}
+
+async function insertFaq(
+  client: PoolClient,
+  command: ResolveKnowledgeGapCommand
+): Promise<number> {
+  await client.query(
+    `INSERT INTO faqs
+      (id, category_id, canonical_question, normalized_question, answer, status,
+       content_version, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, 'embedding_pending', 1, $6, $6)`,
+    [
+      command.faqId,
+      command.input.categoryId,
+      command.input.question,
+      normalize(command.input.question),
+      command.input.answer,
+      command.createdAt
+    ]
+  );
+  return 1;
+}
+
+async function updateFaq(
+  client: PoolClient,
+  command: ResolveKnowledgeGapCommand
+): Promise<number> {
+  const result = await client.query<{ content_version: number }>(
+    `UPDATE faqs
+     SET category_id = $2,
+         canonical_question = $3,
+         normalized_question = $4,
+         answer = $5,
+         status = 'embedding_pending',
+         embedding = NULL,
+         embedding_error = NULL,
+         content_version = content_version + 1,
+         updated_at = $6
+     WHERE id = $1
+     RETURNING content_version`,
+    [
+      command.faqId,
+      command.input.categoryId,
+      command.input.question,
+      normalize(command.input.question),
+      command.input.answer,
+      command.createdAt
+    ]
+  );
+  if (!result.rows[0]) throw new AppError("FAQ_NOT_FOUND", "FAQ not found.", 404);
+  return result.rows[0].content_version;
+}
+
+async function replaceAliases(
+  client: PoolClient,
+  faqId: string,
+  aliases: string[]
+): Promise<void> {
+  await client.query("DELETE FROM faq_aliases WHERE faq_id = $1", [faqId]);
+  for (const alias of aliases) {
+    await client.query(
+      `INSERT INTO faq_aliases (id, faq_id, phrase, normalized_phrase)
+       VALUES (gen_random_uuid(), $1, $2, $3)`,
+      [faqId, alias, normalize(alias)]
+    );
+  }
+}
+
+function hashResolutionRequest(command: ResolveKnowledgeGapCommand): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        knowledgeGapId: command.knowledgeGapId,
+        mode: command.input.mode,
+        faqId: command.input.faqId ?? null,
+        categoryId: command.input.categoryId,
+        question: command.input.question,
+        aliases: command.input.aliases,
+        answer: command.input.answer,
+        expectedVersion: command.input.expectedVersion
+      })
+    )
+    .digest("hex");
+}
+
+function conflict(code: string, message: string): AppError {
+  return new AppError(code, message, 409);
+}
+
+function normalize(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function eventTransition(type: KnowledgeGapEvent["type"]) {

@@ -162,7 +162,8 @@ export class PostgresFaqRepository
   async activateEmbedding(
     faqId: string,
     contentVersion: number,
-    embedding: number[]
+    embedding: number[],
+    resolutionId?: string
   ): Promise<void> {
     const client = await this.pool.connect();
     try {
@@ -180,6 +181,9 @@ export class PostgresFaqRepository
            SET version = version + 1, updated_at = now()
            WHERE singleton = true`
         );
+        if (resolutionId) {
+          await completeGapResolution(client, resolutionId, faqId);
+        }
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -190,12 +194,31 @@ export class PostgresFaqRepository
     }
   }
 
-  async failEmbedding(faqId: string, contentVersion: number, message: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE faqs SET status = 'embedding_failed', embedding_error = $3, updated_at = now()
-       WHERE id = $1 AND content_version = $2 AND status = 'embedding_pending'`,
-      [faqId, contentVersion, message.slice(0, 500)]
-    );
+  async failEmbedding(
+    faqId: string,
+    contentVersion: number,
+    message: string,
+    resolutionId?: string
+  ): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const failed = await client.query(
+        `UPDATE faqs SET status = 'embedding_failed', embedding_error = $3, updated_at = now()
+         WHERE id = $1 AND content_version = $2 AND status = 'embedding_pending'
+         RETURNING id`,
+        [faqId, contentVersion, message.slice(0, 500)]
+      );
+      if (failed.rowCount && resolutionId) {
+        await failGapResolution(client, resolutionId, faqId);
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async claim(limit: number): Promise<OutboxMessage[]> {
@@ -330,6 +353,68 @@ async function insertEmbeddingOutbox(client: PoolClient, faq: FaqEntry): Promise
       faq.id,
       JSON.stringify({ faqId: faq.id, contentVersion: faq.contentVersion })
     ]
+  );
+}
+
+async function completeGapResolution(
+  client: PoolClient,
+  resolutionId: string,
+  faqId: string
+): Promise<void> {
+  const resolution = await client.query<{ gap_id: string; admin_id: string }>(
+    `UPDATE knowledge_gap_resolutions
+     SET status = 'completed', completed_at = now(), error_code = NULL
+     WHERE id = $1 AND faq_id = $2 AND status = 'pending'
+     RETURNING gap_id, admin_id`,
+    [resolutionId, faqId]
+  );
+  if (!resolution.rows[0]) return;
+  const completed = await client.query(
+    `UPDATE knowledge_gaps
+     SET status = 'resolved', resolved_faq_id = $2, version = version + 1
+     WHERE id = $1 AND status = 'resolving'
+     RETURNING id`,
+    [resolution.rows[0].gap_id, faqId]
+  );
+  if (!completed.rowCount) return;
+  await client.query(
+    `INSERT INTO knowledge_gap_events
+      (id, gap_id, admin_id, event_type, from_status, to_status,
+       faq_id, resolution_id, created_at)
+     VALUES (gen_random_uuid(), $1, $2, 'resolved', 'resolving', 'resolved', $3, $4, now())`,
+    [resolution.rows[0].gap_id, resolution.rows[0].admin_id, faqId, resolutionId]
+  );
+}
+
+async function failGapResolution(
+  client: PoolClient,
+  resolutionId: string,
+  faqId: string
+): Promise<void> {
+  const resolution = await client.query<{ gap_id: string; admin_id: string }>(
+    `UPDATE knowledge_gap_resolutions
+     SET status = 'failed', completed_at = now(), error_code = 'EMBEDDING_FAILED'
+     WHERE id = $1 AND faq_id = $2 AND status = 'pending'
+     RETURNING gap_id, admin_id`,
+    [resolutionId, faqId]
+  );
+  if (!resolution.rows[0]) return;
+  const reopened = await client.query(
+    `UPDATE knowledge_gaps
+     SET status = 'open', resolved_faq_id = NULL, version = version + 1
+     WHERE id = $1 AND status = 'resolving'
+     RETURNING id`,
+    [resolution.rows[0].gap_id]
+  );
+  if (!reopened.rowCount) return;
+  await client.query(
+    `INSERT INTO knowledge_gap_events
+      (id, gap_id, admin_id, event_type, from_status, to_status,
+       faq_id, resolution_id, reason, created_at)
+     VALUES
+      (gen_random_uuid(), $1, $2, 'resolution_failed', 'resolving', 'open',
+       $3, $4, 'EMBEDDING_FAILED', now())`,
+    [resolution.rows[0].gap_id, resolution.rows[0].admin_id, faqId, resolutionId]
   );
 }
 

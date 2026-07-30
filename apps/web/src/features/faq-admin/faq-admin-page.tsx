@@ -1,16 +1,42 @@
 import type { Faq, FaqStatus } from "@faq/contracts";
 import { Button } from "@faq/ui";
 import { AlertCircle, BookOpen, LoaderCircle, Plus, RotateCcw } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useKnowledgeGap,
+  useResolveKnowledgeGap
+} from "../knowledge-gap-admin/use-knowledge-gaps.js";
 import { CategoryManager } from "./category-manager.js";
 import { FaqForm } from "./faq-form.js";
 import { useFaqAdministration } from "./use-faqs.js";
 
 export function FaqAdminPage() {
   const administration = useFaqAdministration();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const knowledgeGapId = searchParams.get("knowledgeGapId");
+  const knowledgeGap = useKnowledgeGap(knowledgeGapId);
+  const resolveKnowledgeGap = useResolveKnowledgeGap();
   const [editing, setEditing] = useState<Faq | "new" | null>(null);
   const categories = administration.categories.data ?? [];
+  const gapInitialValues = useMemo(() => {
+    if (!knowledgeGap.data) return undefined;
+    const canonical = knowledgeGap.data.representativeQuestion.toLocaleLowerCase("pt-BR");
+    const aliases = Array.from(
+      new Set(
+        knowledgeGap.data.occurrences
+          .map((occurrence) => occurrence.question.trim())
+          .filter((question) => question.toLocaleLowerCase("pt-BR") !== canonical)
+      )
+    );
+    return {
+      question: knowledgeGap.data.representativeQuestion,
+      aliases: aliases.join(", ")
+    };
+  }, [knowledgeGap.data]);
+  const resolvingFromGap = Boolean(knowledgeGapId && knowledgeGap.data);
+  const showForm = Boolean(editing || knowledgeGapId);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -55,17 +81,45 @@ export function FaqAdminPage() {
           onCreate={(name) => administration.createCategory.mutateAsync({ name })}
         />
 
-        {editing && (
+        {knowledgeGapId && knowledgeGap.isPending && (
+          <StatusPanel>Carregando pergunta sem resposta…</StatusPanel>
+        )}
+        {knowledgeGapId && knowledgeGap.isError && (
+          <StatusPanel role="alert">
+            Não foi possível carregar a pergunta que será respondida.
+          </StatusPanel>
+        )}
+        {showForm && (!knowledgeGapId || knowledgeGap.data) && (
           <FaqForm
             categories={categories}
-            faq={editing === "new" ? undefined : editing}
-            pending={administration.saveFaq.isPending}
-            onCancel={() => setEditing(null)}
-            onSubmit={(input) =>
-              administration.saveFaq
-                .mutateAsync({ id: editing === "new" ? undefined : editing.id, input })
-                .then(() => setEditing(null))
-            }
+            faq={!editing || editing === "new" ? undefined : editing}
+            initialValues={gapInitialValues}
+            pending={administration.saveFaq.isPending || resolveKnowledgeGap.isPending}
+            submitLabel={resolvingFromGap ? "Salvar e resolver pergunta" : undefined}
+            onCancel={() => {
+              if (knowledgeGapId) void navigate("/admin/knowledge-gaps");
+              else setEditing(null);
+            }}
+            onSubmit={async (input) => {
+              if (knowledgeGapId && knowledgeGap.data) {
+                await resolveKnowledgeGap.mutateAsync({
+                  id: knowledgeGapId,
+                  idempotencyKey: crypto.randomUUID(),
+                  input: {
+                    ...input,
+                    mode: "create",
+                    expectedVersion: knowledgeGap.data.version
+                  }
+                });
+                await navigate("/admin/knowledge-gaps");
+                return;
+              }
+              await administration.saveFaq.mutateAsync({
+                id: editing === "new" ? undefined : editing?.id,
+                input
+              });
+              setEditing(null);
+            }}
           />
         )}
 

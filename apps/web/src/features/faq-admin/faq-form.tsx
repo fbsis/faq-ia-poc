@@ -13,13 +13,17 @@ interface FormValues {
 export function FaqForm({
   categories,
   faq,
+  initialValues,
   pending,
+  submitLabel,
   onCancel,
   onSubmit
 }: {
   categories: Category[];
   faq?: Faq;
+  initialValues?: Partial<FormValues>;
   pending: boolean;
+  submitLabel?: string;
   onCancel: () => void;
   onSubmit: (input: FaqInput) => Promise<unknown>;
 }) {
@@ -27,11 +31,18 @@ export function FaqForm({
   useEffect(() => {
     reset({
       categoryId: faq?.category.id ?? categories[0]?.id ?? "",
-      question: faq?.question ?? "",
-      aliases: faq?.aliases.join(", ") ?? "",
-      answer: faq?.answer ?? ""
+      question: faq?.question ?? initialValues?.question ?? "",
+      aliases: faq?.aliases.join(", ") ?? initialValues?.aliases ?? "",
+      answer: faq?.answer ?? initialValues?.answer ?? ""
     });
-  }, [categories, faq, reset]);
+  }, [
+    categories,
+    faq,
+    initialValues?.aliases,
+    initialValues?.answer,
+    initialValues?.question,
+    reset
+  ]);
 
   return (
     <form
@@ -95,7 +106,7 @@ export function FaqForm({
       )}
       <div className="flex gap-3">
         <Button disabled={pending || categories.length === 0} type="submit">
-          {pending ? "Salvando…" : "Salvar pergunta"}
+          {pending ? "Salvando…" : (submitLabel ?? "Salvar pergunta")}
         </Button>
         <Button variant="ghost" type="button" onClick={onCancel}>
           Cancelar

@@ -30,7 +30,12 @@ export async function startEmbeddingWorker(): Promise<void> {
     console.error("FAQ embedding job failed", { jobId: job?.id, message: error.message });
     if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
       const payload = parsePrepareFaqEmbeddingJob(job.data);
-      void repository.failEmbedding(payload.faqId, payload.contentVersion, error.message);
+      void repository.failEmbedding(
+        payload.faqId,
+        payload.contentVersion,
+        error.message,
+        payload.resolutionId
+      );
     }
   });
   const stop = async () => {

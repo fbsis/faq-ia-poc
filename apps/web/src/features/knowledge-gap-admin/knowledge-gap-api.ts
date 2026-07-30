@@ -1,9 +1,12 @@
 import {
+  gapResolutionSchema,
   knowledgeGapDetailsSchema,
   knowledgeGapPageSchema,
+  type GapResolution,
   type KnowledgeGapDetails,
   type KnowledgeGapListQuery,
-  type KnowledgeGapPage
+  type KnowledgeGapPage,
+  type ResolveKnowledgeGapInput
 } from "@faq/contracts";
 import { requestJson } from "../../shared/api/http-client.js";
 
@@ -29,5 +32,18 @@ export function getKnowledgeGap(id: string): Promise<KnowledgeGapDetails> {
   return requestJson(`/api/v1/knowledge-gaps/${id}`, {
     method: "GET",
     schema: knowledgeGapDetailsSchema
+  });
+}
+
+export function resolveKnowledgeGap(
+  id: string,
+  input: ResolveKnowledgeGapInput,
+  idempotencyKey: string
+): Promise<GapResolution> {
+  return requestJson(`/api/v1/knowledge-gaps/${id}/resolutions`, {
+    method: "POST",
+    headers: { "idempotency-key": idempotencyKey },
+    body: JSON.stringify(input),
+    schema: gapResolutionSchema
   });
 }

@@ -2,6 +2,7 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import type {
+  GapResolution,
   FaqListQuery,
   KnowledgeGapDetails,
   KnowledgeGapListQuery,
@@ -57,8 +58,10 @@ import { registerKnowledgeGapRoutes } from "../modules/knowledge-gaps/adapters/i
 import { PostgresKnowledgeGapRepository } from "../modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.js";
 import { GetKnowledgeGap } from "../modules/knowledge-gaps/application/get-knowledge-gap.js";
 import { ListKnowledgeGaps } from "../modules/knowledge-gaps/application/list-knowledge-gaps.js";
+import { ResolveKnowledgeGap } from "../modules/knowledge-gaps/application/resolve-knowledge-gap.js";
 import type {
   KnowledgeGapRepository,
+  ResolveKnowledgeGapCommand,
   UnansweredInteractionRecorder
 } from "../modules/knowledge-gaps/application/ports.js";
 import { registerFaqRoutes } from "../modules/faq/adapters/inbound/http/faq-routes.js";
@@ -74,6 +77,7 @@ export interface BuildApplicationOptions {
   environment?: Environment;
   testOverrides?: {
     failInteractionRecording?: boolean;
+    knowledgeGap?: KnowledgeGapDetails;
   };
 }
 
@@ -134,6 +138,11 @@ export async function buildApplication(
   );
   const listKnowledgeGaps = new ListKnowledgeGaps(resources.knowledgeGaps);
   const getKnowledgeGap = new GetKnowledgeGap(resources.knowledgeGaps);
+  const resolveKnowledgeGap = new ResolveKnowledgeGap(
+    resources.knowledgeGaps,
+    randomIds,
+    systemClock
+  );
   const faqUseCases = createFaqUseCases({
     categories: resources.faq,
     faqs: resources.faq,
@@ -145,7 +154,12 @@ export async function buildApplication(
   registerChatRoutes(app, askQuestion);
   registerAnalyticsRoutes(app, { getSession, getAnalyticsSummary });
   registerFaqRoutes(app, { getSession, useCases: faqUseCases });
-  registerKnowledgeGapRoutes(app, { getSession, listKnowledgeGaps, getKnowledgeGap });
+  registerKnowledgeGapRoutes(app, {
+    getSession,
+    listKnowledgeGaps,
+    getKnowledgeGap,
+    resolveKnowledgeGap
+  });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
   app.addHook("onClose", async () => {
@@ -227,7 +241,7 @@ async function createTestResources(
     auth: new MemoryAuthRepository(admin),
     passwords,
     analytics: new MemoryAnalyticsRepository(),
-    knowledgeGaps: new MemoryKnowledgeGapRepository(),
+    knowledgeGaps: new MemoryKnowledgeGapRepository(overrides?.knowledgeGap),
     faq: new MemoryFaqRepository(),
     chat: {
       search: new MemoryFaqSearch(),
@@ -242,17 +256,43 @@ async function createTestResources(
 }
 
 class MemoryKnowledgeGapRepository implements KnowledgeGapRepository {
+  constructor(private gap?: KnowledgeGapDetails) {}
+
   list(query: KnowledgeGapListQuery): Promise<KnowledgeGapPage> {
+    const items = this.gap && (!query.status || query.status === this.gap.status) ? [this.gap] : [];
     return Promise.resolve({
-      items: [],
+      items,
       page: query.page,
       pageSize: query.pageSize,
-      total: 0
+      total: items.length
     });
   }
 
-  get(): Promise<KnowledgeGapDetails | null> {
-    return Promise.resolve(null);
+  get(id: string): Promise<KnowledgeGapDetails | null> {
+    return Promise.resolve(this.gap?.id === id ? this.gap : null);
+  }
+
+  resolve(command: ResolveKnowledgeGapCommand): Promise<GapResolution> {
+    if (!this.gap || this.gap.id !== command.knowledgeGapId) {
+      return Promise.reject(new Error("Knowledge gap not found."));
+    }
+    const resolution: GapResolution = {
+      id: command.resolutionId,
+      knowledgeGapId: command.knowledgeGapId,
+      mode: command.input.mode,
+      faqId: command.faqId,
+      faqStatus: "embedding_pending",
+      status: "pending",
+      createdAt: command.createdAt.toISOString()
+    };
+    this.gap = {
+      ...this.gap,
+      status: "resolving",
+      resolvedFaqId: command.faqId,
+      version: this.gap.version + 1,
+      currentResolution: resolution
+    };
+    return Promise.resolve(resolution);
   }
 }
 

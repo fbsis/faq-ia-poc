@@ -117,6 +117,8 @@ export const knowledgeGapIdParamsSchema = z.object({
   knowledgeGapId: identifierSchema
 });
 
+export const idempotencyKeySchema = z.string().trim().min(8).max(100);
+
 export type KnowledgeGapStatus = z.infer<typeof knowledgeGapStatusSchema>;
 export type KnowledgeGapSort = z.infer<typeof knowledgeGapSortSchema>;
 export type KnowledgeGapListQuery = z.infer<typeof knowledgeGapListQuerySchema>;

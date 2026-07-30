@@ -22,8 +22,18 @@ export interface EmbeddingContent {
 
 export interface FaqEmbeddingRepository {
   getEmbeddingContent(faqId: string): Promise<EmbeddingContent | null>;
-  activateEmbedding(faqId: string, contentVersion: number, embedding: number[]): Promise<void>;
-  failEmbedding(faqId: string, contentVersion: number, message: string): Promise<void>;
+  activateEmbedding(
+    faqId: string,
+    contentVersion: number,
+    embedding: number[],
+    resolutionId?: string
+  ): Promise<void>;
+  failEmbedding(
+    faqId: string,
+    contentVersion: number,
+    message: string,
+    resolutionId?: string
+  ): Promise<void>;
 }
 
 export interface OutboxMessage {

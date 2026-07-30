@@ -137,10 +137,18 @@ export const knowledgeGapResolutions = pgTable("knowledge_gap_resolutions", {
   id: uuid().primaryKey(),
   gapId: uuid("gap_id").notNull(),
   adminId: uuid("admin_id").notNull(),
+  mode: text().notNull(),
   faqId: uuid("faq_id"),
+  faqContentVersion: integer("faq_content_version"),
+  questionSnapshot: text("question_snapshot"),
+  answerSnapshot: text("answer_snapshot"),
+  categoryId: uuid("category_id"),
+  aliasesSnapshot: jsonb("aliases_snapshot").notNull(),
   expectedGapVersion: integer("expected_gap_version").notNull(),
   idempotencyKey: text("idempotency_key").notNull(),
+  requestHash: text("request_hash"),
   status: text().notNull(),
+  errorCode: text("error_code"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true })
 });
@@ -150,7 +158,11 @@ export const knowledgeGapEvents = pgTable("knowledge_gap_events", {
   gapId: uuid("gap_id").notNull(),
   adminId: uuid("admin_id"),
   eventType: text("event_type").notNull(),
+  fromStatus: knowledgeGapStatus("from_status"),
+  toStatus: knowledgeGapStatus("to_status"),
   reason: text(),
+  faqId: uuid("faq_id"),
+  resolutionId: uuid("resolution_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull()
 });
 

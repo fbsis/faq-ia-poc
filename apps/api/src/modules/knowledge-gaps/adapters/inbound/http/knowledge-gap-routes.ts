@@ -1,14 +1,21 @@
 import {
+  gapResolutionSchema,
+  idempotencyKeySchema,
   knowledgeGapDetailsSchema,
   knowledgeGapIdParamsSchema,
   knowledgeGapListQuerySchema,
-  knowledgeGapPageSchema
+  knowledgeGapPageSchema,
+  resolveKnowledgeGapInputSchema
 } from "@faq/contracts";
 import type { FastifyInstance } from "fastify";
 import type { GetSession } from "../../../../auth/application/get-session.js";
-import { createAuthGuards } from "../../../../auth/adapters/inbound/http/auth-plugin.js";
+import {
+  createAuthGuards,
+  SESSION_COOKIE
+} from "../../../../auth/adapters/inbound/http/auth-plugin.js";
 import type { GetKnowledgeGap } from "../../../application/get-knowledge-gap.js";
 import type { ListKnowledgeGaps } from "../../../application/list-knowledge-gaps.js";
+import type { ResolveKnowledgeGap } from "../../../application/resolve-knowledge-gap.js";
 
 export function registerKnowledgeGapRoutes(
   app: FastifyInstance,
@@ -16,11 +23,14 @@ export function registerKnowledgeGapRoutes(
     getSession: GetSession;
     listKnowledgeGaps: ListKnowledgeGaps;
     getKnowledgeGap: GetKnowledgeGap;
+    resolveKnowledgeGap: ResolveKnowledgeGap;
   }
 ): void {
   const guards = createAuthGuards(dependencies.getSession);
   const requireAdmin = (request: Parameters<typeof guards.requireAdmin>[0]) =>
     guards.requireAdmin(request);
+  const requireMutation = (request: Parameters<typeof guards.requireCsrf>[0]) =>
+    guards.requireCsrf(request);
 
   app.get("/api/v1/knowledge-gaps", { preHandler: requireAdmin }, async (request) =>
     knowledgeGapPageSchema.parse(
@@ -36,6 +46,22 @@ export function registerKnowledgeGapRoutes(
       return knowledgeGapDetailsSchema.parse(
         await dependencies.getKnowledgeGap.execute(knowledgeGapId)
       );
+    }
+  );
+
+  app.post(
+    "/api/v1/knowledge-gaps/:knowledgeGapId/resolutions",
+    { preHandler: requireMutation },
+    async (request, reply) => {
+      const { knowledgeGapId } = knowledgeGapIdParamsSchema.parse(request.params);
+      const session = await dependencies.getSession.execute(request.cookies[SESSION_COOKIE]);
+      const resolution = await dependencies.resolveKnowledgeGap.execute({
+        knowledgeGapId,
+        adminId: session.admin.id,
+        idempotencyKey: idempotencyKeySchema.parse(request.headers["idempotency-key"]),
+        input: resolveKnowledgeGapInputSchema.parse(request.body)
+      });
+      return reply.status(202).send(gapResolutionSchema.parse(resolution));
     }
   );
 }

@@ -1,6 +1,7 @@
 import type { KnowledgeGapDetails as KnowledgeGapDetailsContract } from "@faq/contracts";
 import { Button } from "@faq/ui";
-import { History, MessageCircleQuestion, X } from "lucide-react";
+import { History, MessageCircleQuestion, PenLine, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { GapAuditTimeline } from "./gap-audit-timeline.js";
 import { StatusBadge } from "./knowledge-gap-list.js";
 
@@ -27,6 +28,15 @@ export function KnowledgeGapDetails({
           <X className="size-4" aria-hidden="true" />
         </Button>
       </div>
+
+      {details.status === "open" && (
+        <Button asChild className="mt-5 w-full">
+          <Link to={`/admin/faqs?knowledgeGapId=${details.id}`}>
+            <PenLine className="mr-2 size-4" aria-hidden="true" />
+            Responder pergunta
+          </Link>
+        </Button>
+      )}
 
       <section className="mt-6">
         <h3 className="flex items-center gap-2 font-semibold text-slate-900">
