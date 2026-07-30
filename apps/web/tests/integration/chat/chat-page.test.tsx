@@ -21,6 +21,14 @@ function renderPage() {
 }
 
 describe("public FAQ chat", () => {
+  it("starts with an assistant greeting inside a conversation log", () => {
+    renderPage();
+
+    const conversation = screen.getByRole("log", { name: /conversa com o assistente/i });
+    expect(conversation).toHaveTextContent(/olá/i);
+    expect(conversation).toHaveTextContent(/como posso ajudar/i);
+  });
+
   it("submits a question and announces the approved answer", async () => {
     server.use(
       http.post("/api/v1/chat/questions", () =>
@@ -45,8 +53,44 @@ describe("public FAQ chat", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
 
+    expect(screen.getByText("Como redefino minha senha?", { exact: true })).toBeVisible();
     expect(await screen.findByText(/esqueci minha senha/i)).toBeVisible();
     expect(screen.getByText("Conta")).toBeVisible();
+    expect(screen.getByLabelText(/digite sua pergunta/i)).toHaveValue("");
+  });
+
+  it("keeps previous user and assistant messages in the visible conversation", async () => {
+    server.use(
+      http.post("/api/v1/chat/questions", async ({ request }) => {
+        const body = (await request.json()) as { question: string };
+        return HttpResponse.json({
+          interactionId:
+            body.question === "Primeira pergunta"
+              ? "00000000-0000-4000-8000-000000000010"
+              : "00000000-0000-4000-8000-000000000011",
+          status: "answered",
+          message: "Encontrei uma resposta aprovada.",
+          answer:
+            body.question === "Primeira pergunta"
+              ? "Resposta da primeira pergunta"
+              : "Resposta da segunda pergunta"
+        });
+      })
+    );
+    renderPage();
+    const input = screen.getByLabelText(/digite sua pergunta/i);
+
+    await userEvent.type(input, "Primeira pergunta");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+    expect(await screen.findByText("Resposta da primeira pergunta")).toBeVisible();
+
+    await userEvent.type(input, "Segunda pergunta");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+
+    expect(await screen.findByText("Resposta da segunda pergunta")).toBeVisible();
+    expect(screen.getByText("Primeira pergunta", { exact: true })).toBeVisible();
+    expect(screen.getByText("Resposta da primeira pergunta")).toBeVisible();
+    expect(screen.getByText("Segunda pergunta", { exact: true })).toBeVisible();
   });
 
   it("disables duplicate submission while waiting", async () => {
