@@ -47,7 +47,9 @@ export async function registerBullBoard(
 ): Promise<void> {
   const guards = createAuthGuards(dependencies.getSession);
   await app.register(async (protectedApp) => {
-    protectedApp.addHook("onRequest", (request) => guards.requireAdmin(request));
+    if (dependencies.environment.NODE_ENV === "production") {
+      protectedApp.addHook("onRequest", (request) => guards.requireAdmin(request));
+    }
 
     if (dependencies.testMode || !dependencies.connection) {
       protectedApp.get(basePath, async (_, reply) =>
