@@ -23,7 +23,8 @@ every Compose startup. The services are available at:
 
 - Web application: `http://localhost:5173`
 - API health: `http://localhost:3000/api/v1/health`
-- Bull Board: `http://localhost:3000/admin/queues` after administrator login
+- Bull Board: `http://localhost:5173/admin/queues/` without authentication in development
+- Internal architecture walkthrough: `http://localhost:5173/admin/walkthrough`
 
 Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before logging in. Do not commit `.env` or real
 credentials.
@@ -84,3 +85,5 @@ docker compose -f compose.production.yaml up --build
   security, operations, and implementation milestones.
 - [Chat Experience and Retrieval](docs/chat-experience-and-retrieval.md) — conversation behavior,
   hybrid search, Markdown support, safety boundaries, and fallback behavior.
+- [Architecture Walkthrough](docs/architecture-walkthrough.md) — a private study guide connecting
+  the user journey, code paths, architecture decisions, and their motivation.
