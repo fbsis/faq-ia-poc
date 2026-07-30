@@ -515,3 +515,25 @@ searches in the same anonymous conversation.
 
 **Checkpoint**: The first two unanswered attempts request useful context; the third consecutive
 miss admits that the knowledge base lacks the information and announces human follow-up.
+
+---
+
+## Phase 12: Equivalent Portuguese Exact Matching
+
+**Purpose**: Prevent harmless Portuguese article variations from downgrading an exact FAQ answer
+to an ambiguous suggestion.
+
+### Tests
+
+- [X] T176 [US1] Cover possessive article normalization, PostgreSQL exact retrieval, and the
+  user-reported HTTP example in `apps/api/tests/unit/chat/retrieval-policy.test.ts`,
+  `apps/api/tests/integration/chat/postgres-faq-search.test.ts`, and
+  `apps/api/tests/contract/chat.routes.test.ts`
+
+### Implementation
+
+- [X] T177 [US1] Canonicalize neutral definite articles immediately before Portuguese possessives
+  in `apps/api/src/modules/chat/domain/normalize-question.ts`
+
+**Checkpoint**: “Como redefino a minha senha?” returns the approved answer for “Como redefino minha
+senha?” instead of asking the user to confirm an equivalent suggestion.

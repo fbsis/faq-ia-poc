@@ -70,7 +70,9 @@ HTTP / PostgreSQL / Redis / OpenAI adapters
 1. Validate a maximum of six recent user/assistant messages and the current question.
 2. When context exists, ask the conversational model to rewrite the current message as a
    standalone search question without answering it.
-3. Normalize that query while retaining the original text for the interaction record.
+3. Normalize that query while retaining the original text for the interaction record. Besides
+   accents, punctuation, and casing, remove neutral definite articles immediately before
+   possessives so equivalent wording reaches the exact-match path.
 4. Check a versioned Redis key derived from the normalized standalone query.
 5. On a miss, create an OpenAI embedding using `text-embedding-3-small` with 1536 dimensions.
 6. Run semantic pgvector and Portuguese lexical/fuzzy retrieval for every non-exact query. Lexical

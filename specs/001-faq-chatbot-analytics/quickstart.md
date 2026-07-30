@@ -83,8 +83,10 @@ Expected outcomes:
 3. Create an FAQ with a Portuguese question, at least one paraphrase, and an approved answer.
 4. Confirm the FAQ moves through embedding preparation and becomes active.
 5. Ask the exact question in the public chat and confirm the approved answer appears.
-6. Ask a paraphrase and confirm the same answer appears.
-7. Edit the answer, wait for re-embedding, and confirm new chats receive the new answer while old interaction details retain the old snapshot.
+6. Ask “Como redefino a minha senha?” and confirm it returns the approved answer for “Como redefino
+   minha senha?” directly, without presenting an ambiguous suggestion.
+7. Ask a broader paraphrase and confirm the same answer appears.
+8. Edit the answer, wait for re-embedding, and confirm new chats receive the new answer while old interaction details retain the old snapshot.
 
 ## Validate a contextual conversation
 

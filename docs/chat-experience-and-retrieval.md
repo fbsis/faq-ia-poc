@@ -32,7 +32,10 @@ collect or dispatch contact details; that operational follow-up requires a separ
 
 Retrieval uses multiple complementary strategies instead of relying on one embedding result:
 
-1. Normalize the standalone question and check the versioned Redis cache.
+1. Normalize the standalone question and check the versioned Redis cache. Normalization removes
+   accents, punctuation, casing differences, and neutral Portuguese articles immediately before a
+   possessive. For example, “como redefino a minha senha” and “como redefino minha senha” become
+   the same exact query.
 2. Look for an exact match in canonical questions and approved aliases.
 3. For every non-exact query, run these searches concurrently:
    - semantic similarity over OpenAI embeddings stored in PostgreSQL with pgvector;
@@ -53,8 +56,9 @@ The default decision bands are:
 | `0.70–0.78` | Present the match as a suggestion without claiming a definitive answer |
 | `< 0.70` | Record as unanswered; clarify first, then hand off after repeated misses |
 
-Exact approved matches are accepted immediately. The non-exact thresholds are configuration
-defaults and must be calibrated against a representative Portuguese evaluation set.
+Exact approved matches, including equivalent normalized wording, are accepted immediately and
+return the approved answer rather than an ambiguous suggestion. The non-exact thresholds are
+configuration defaults and must be calibrated against a representative Portuguese evaluation set.
 
 ## Markdown messages
 

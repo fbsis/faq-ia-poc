@@ -179,6 +179,9 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **FR-040**: Após duas respostas anteriores sem conteúdo confiável na conversa atual, uma nova
   tentativa sem resposta MUST deixar de solicitar esclarecimentos e MUST informar deterministicamente
   que a informação não está na base e que uma pessoa da equipe entrará em contato para explicá-la.
+- **FR-041**: O sistema MUST tratar artigos definidos neutros antes de possessivos como variação
+  equivalente na normalização da busca, de modo que perguntas como “como redefino a minha senha”
+  encontrem exatamente a FAQ “como redefino minha senha” e retornem sua resposta aprovada.
 
 ### Key Entities
 
