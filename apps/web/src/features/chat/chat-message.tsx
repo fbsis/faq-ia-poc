@@ -9,7 +9,11 @@ export function ChatMessage({ result }: { result: AskQuestionResponse }) {
       <AssistantAvatar />
       <div>
         <p className="mb-1 ml-1 text-xs font-semibold text-slate-500">Assistente FAQ</p>
-        {result.status === "answered" ? (
+        {result.status === "social" ? (
+          <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <MarkdownMessage>{result.message}</MarkdownMessage>
+          </div>
+        ) : result.status === "answered" ? (
           <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-5 py-4 shadow-sm">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <CheckCircle2 aria-hidden className="text-teal-700" size={17} />

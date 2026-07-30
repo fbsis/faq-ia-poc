@@ -88,7 +88,10 @@ function toConversationHistory(turns: ChatTurn[]): ConversationMessage[] {
       { role: "user" as const, content: turn.question },
       {
         role: "assistant" as const,
-        content: turn.response.answer ?? turn.response.message,
+        content:
+          "answer" in turn.response
+            ? (turn.response.answer ?? turn.response.message)
+            : turn.response.message,
         status: turn.response.status
       }
     ])

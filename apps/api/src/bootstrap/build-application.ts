@@ -301,7 +301,7 @@ class MemoryAnalyticsRepository implements AnalyticsRepository {
 }
 
 const deterministicConversationAgent: ConversationAgent = {
-  rewriteQuestion: (question) => Promise.resolve(question),
+  routeMessage: (question) => Promise.resolve({ intent: "faq", searchQuestion: question }),
   createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer),
   createUnansweredResponse: () =>
     Promise.resolve(

@@ -22,11 +22,15 @@ export interface EmbeddingProvider {
 export interface ConversationMessage {
   readonly role: "user" | "assistant";
   readonly content: string;
-  readonly status?: "answered" | "ambiguous" | "unanswered";
+  readonly status?: "answered" | "ambiguous" | "unanswered" | "social";
 }
 
+export type MessageRoute =
+  | { readonly intent: "faq"; readonly searchQuestion: string }
+  | { readonly intent: "social"; readonly response: string };
+
 export interface ConversationAgent {
-  rewriteQuestion(question: string, history: ConversationMessage[]): Promise<string>;
+  routeMessage(question: string, history: ConversationMessage[]): Promise<MessageRoute>;
   createGroundedResponse(input: {
     question: string;
     history: ConversationMessage[];

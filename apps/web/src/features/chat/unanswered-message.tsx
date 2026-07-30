@@ -2,7 +2,9 @@ import type { AskQuestionResponse } from "@faq/contracts";
 import { HelpCircle, Search } from "lucide-react";
 import { MarkdownMessage } from "./markdown-message.js";
 
-export function UnansweredMessage({ result }: { result: AskQuestionResponse }) {
+type FaqQuestionResponse = Exclude<AskQuestionResponse, { status: "social" }>;
+
+export function UnansweredMessage({ result }: { result: FaqQuestionResponse }) {
   const ambiguous = result.status === "ambiguous";
 
   return (

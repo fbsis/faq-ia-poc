@@ -12,7 +12,7 @@ const assistantConversationMessageSchema = z
   .object({
     role: z.literal("assistant"),
     content: z.string().trim().min(1).max(1000),
-    status: z.enum(["answered", "ambiguous", "unanswered"]).optional()
+    status: z.enum(["answered", "ambiguous", "unanswered", "social"]).optional()
   })
   .strict();
 
@@ -34,15 +34,26 @@ const categorySummarySchema = z.object({
   name: z.string().min(1)
 });
 
-export const askQuestionResponseSchema = z.object({
-  interactionId: identifierSchema,
-  status: z.enum(["answered", "ambiguous", "unanswered"]),
-  message: z.string().min(1),
-  answer: z.string().min(1).optional(),
-  matchedQuestion: z.string().min(1).optional(),
-  category: categorySummarySchema.optional(),
-  suggestions: z.array(z.string().min(1)).max(3).optional()
-});
+const faqQuestionResponseSchema = z
+  .object({
+    interactionId: identifierSchema,
+    status: z.enum(["answered", "ambiguous", "unanswered"]),
+    message: z.string().min(1),
+    answer: z.string().min(1).optional(),
+    matchedQuestion: z.string().min(1).optional(),
+    category: categorySummarySchema.optional(),
+    suggestions: z.array(z.string().min(1)).max(3).optional()
+  })
+  .strict();
+
+const socialResponseSchema = z
+  .object({
+    status: z.literal("social"),
+    message: z.string().min(1)
+  })
+  .strict();
+
+export const askQuestionResponseSchema = z.union([faqQuestionResponseSchema, socialResponseSchema]);
 
 export type AskQuestionRequest = z.infer<typeof askQuestionRequestSchema>;
 export type AskQuestionResponse = z.infer<typeof askQuestionResponseSchema>;

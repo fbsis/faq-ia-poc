@@ -634,31 +634,43 @@ components:
                     maxLength: 1000
                   status:
                     type: string
-                    enum: [answered, ambiguous, unanswered]
+                    enum: [answered, ambiguous, unanswered, social]
     AskQuestionResponse:
-      type: object
-      required: [interactionId, status, message]
-      properties:
-        interactionId:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [answered, ambiguous, unanswered]
-        message:
-          type: string
-        answer:
-          type: string
-          description: Natural assistant response grounded in the matched approved FAQ.
-        matchedQuestion:
-          type: string
-        category:
-          $ref: "#/components/schemas/CategorySummary"
-        suggestions:
-          type: array
-          maxItems: 3
-          items:
-            type: string
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [interactionId, status, message]
+          properties:
+            interactionId:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [answered, ambiguous, unanswered]
+            message:
+              type: string
+            answer:
+              type: string
+              description: Natural assistant response grounded in the matched approved FAQ.
+            matchedQuestion:
+              type: string
+            category:
+              $ref: "#/components/schemas/CategorySummary"
+            suggestions:
+              type: array
+              maxItems: 3
+              items:
+                type: string
+        - type: object
+          additionalProperties: false
+          required: [status, message]
+          properties:
+            status:
+              type: string
+              const: social
+            message:
+              type: string
+              description: Brief natural response that closes or acknowledges a social turn.
     CategoryInput:
       type: object
       additionalProperties: false

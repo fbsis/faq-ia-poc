@@ -152,7 +152,7 @@ bootstrap layer.
 | Outbox relay | Publishes committed embedding intent to BullMQ | PostgreSQL outbox and queue Redis | Leaves messages pending and reconciles them after queue recovery |
 | BullMQ worker | Loads current FAQ content, creates embeddings, and conditionally activates FAQ versions | Queue Redis, PostgreSQL, and OpenAI | Retries recoverable failures; stale work is a no-op; exhausted resolution work returns the gap to open |
 | Bull Board | Exposes operational queue visibility | BullMQ queue state | Admin-only and read-only in production; never determines business status |
-| OpenAI adapters | Interpret bounded follow-ups, produce grounded conversational answers, and create 1,536-dimensional embeddings | Responses API with `gpt-5.6-luna`; embeddings with `text-embedding-3-small` | Disable response storage; generation failure returns approved text verbatim; semantic-only questions fall back safely |
+| OpenAI adapters | Route social messages versus FAQ queries with Structured Outputs, interpret bounded follow-ups, produce grounded conversational answers, and create 1,536-dimensional embeddings | Responses API with `gpt-5.6-luna`; embeddings with `text-embedding-3-small` | Disable response storage; routing failure preserves the original FAQ path; generation failure returns approved text verbatim; semantic-only questions fall back safely |
 
 FAQ removal is a reversible lifecycle transition. An inactive entry remains available for audit
 and restoration but is excluded from chat retrieval immediately. Restoration increments its
@@ -164,37 +164,41 @@ content version and follows the same outbox/BullMQ embedding path before becomin
 
 1. The web application submits a question of 1–500 characters, an optional category, and at most
    six recent user/assistant messages.
-2. The API validates the bounded history. When the question depends on prior turns, the
-   conversational adapter rewrites it as a standalone search query without answering it.
-3. The API normalizes the standalone query while retaining the original question for history.
-4. The chat use case loads the current knowledge-base version and checks a hashed, versioned Redis
+2. The API validates the bounded history. The conversational adapter returns a structured route:
+   `social` with a brief Portuguese reply, or `faq` with a standalone Portuguese search question.
+   Politeness plus a substantive request remains `faq`.
+3. A `social` route returns immediately without cache access, embeddings, knowledge retrieval,
+   interaction persistence, analytics, or knowledge-gap creation. If routing fails, the original
+   message safely continues as an FAQ query.
+4. The API normalizes the standalone FAQ query while retaining the original question for history.
+5. The chat use case loads the current knowledge-base version and checks a hashed, versioned Redis
    key.
-5. On a cache miss, exact canonical-question and alias matching is attempted first.
-6. For every non-exact query, semantic pgvector retrieval and Portuguese lexical/fuzzy retrieval
+6. On a cache miss, exact canonical-question and alias matching is attempted first.
+7. For every non-exact query, semantic pgvector retrieval and Portuguese lexical/fuzzy retrieval
    run concurrently. Lexical retrieval searches canonical questions, aliases, and approved answers
    using stemming and trigram similarity for related words and small typing errors.
-7. Results are merged by FAQ identity, retaining the strongest confidence for each candidate.
+8. Results are merged by FAQ identity, retaining the strongest confidence for each candidate.
    The retrieval policy then applies configurable defaults:
    - `>= 0.78`: return the best approved FAQ;
    - `0.70–0.78` with one plausible FAQ: answer using that unique candidate;
    - `0.70–0.78` with multiple plausible FAQs: return up to three alternatives;
    - `< 0.70`: record the question as unanswered.
-8. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
+9. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
    with that FAQ as the authority for organization-specific facts. It may add clearly qualified
    general explanations, but it cannot invent internal policies, links, deadlines, contacts, or
    procedures. Provider failure returns the approved answer verbatim.
-9. If no candidate is reliable, the conversational adapter acknowledges the specific doubt and
+10. If no candidate is reliable, the conversational adapter acknowledges the specific doubt and
    asks one useful clarification without answering from general model knowledge. Provider failure
    returns deterministic reformulation guidance.
-10. Assistant responses are rendered as GitHub-Flavored Markdown. Raw HTML processing is disabled,
+11. Assistant responses are rendered as GitHub-Flavored Markdown. Raw HTML processing is disabled,
     and links open with `noopener` and `noreferrer`.
-11. If OpenAI embeddings are unavailable, exact and PostgreSQL lexical/fuzzy search remain
+12. If OpenAI embeddings are unavailable, exact and PostgreSQL lexical/fuzzy search remain
     available as deterministic retrieval paths.
-12. PostgreSQL stores the immutable interaction result, including both displayed-answer and
+13. PostgreSQL stores the immutable interaction result, including both displayed-answer and
     approved-source snapshots when an answer was shown.
-13. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
+14. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
     knowledge gap.
-14. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
+15. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
     telemetry.
 
 ### 5.2 FAQ creation or update

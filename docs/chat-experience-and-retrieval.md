@@ -5,10 +5,17 @@ auditable FAQ response.
 
 ## User experience
 
-The chat keeps a bounded history of up to six recent user and assistant messages. Follow-up
-questions such as “and if I no longer have access?” can therefore be interpreted in the context
-of the previous topic. OpenAI rewrites a context-dependent message into a standalone search query,
-but that rewrite does not answer the user or add facts.
+The chat keeps a bounded history of up to six recent user and assistant messages. Before any cache,
+embedding, or database lookup, OpenAI returns a structured intent route. A question, information
+request, problem report, or knowledge-dependent follow-up is classified as `faq` and rewritten as
+a standalone Portuguese search question. A greeting, acknowledgement, thanks, farewell, or brief
+reaction that requests no information is classified as `social` and receives a short natural reply.
+For example, “perfeito, funcionou aqui” closes politely instead of becoming another FAQ question.
+
+Social messages do not create FAQ interactions, analytics events, or administrative knowledge
+gaps. A message that combines politeness with a substantive request, such as “obrigado, mas como
+altero minha senha?”, remains an FAQ query. If intent routing is unavailable, the original message
+continues through the FAQ path so a real support request is not silently discarded.
 
 When a reliable FAQ is found, the assistant responds naturally in Portuguese. The approved FAQ
 remains authoritative for organization-specific facts. The assistant may organize steps and add
@@ -82,6 +89,8 @@ HTML and script content returned by a model or stored answer is not executed by 
 - General explanatory context must be clearly qualified and cannot invent organization-specific
   behavior.
 - OpenAI response storage is disabled.
+- Social routes stop before Redis, embeddings, PostgreSQL retrieval, interaction persistence, and
+  knowledge-gap creation.
 - At most six recent anonymous messages and the selected FAQ source are sent for response
   generation.
 - Embedding failure does not disable exact, full-text, or fuzzy PostgreSQL retrieval.

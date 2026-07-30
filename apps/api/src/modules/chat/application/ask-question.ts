@@ -44,7 +44,11 @@ export class AskQuestion {
 
   async execute(input: AskQuestionRequest): Promise<AskQuestionResponse> {
     const history = input.history ?? [];
-    const searchQuestion = await this.rewriteQuestion(input.question, history);
+    const route = await this.routeMessage(input.question, history);
+    if (route.intent === "social") {
+      return { status: "social", message: route.response };
+    }
+    const searchQuestion = route.searchQuestion;
     const normalizedQuestion = normalizeQuestion(searchQuestion);
     const categoryId = input.categoryId ?? null;
     const knowledgeVersion = await this.dependencies.knowledgeVersion.current();
@@ -75,15 +79,14 @@ export class AskQuestion {
     return this.complete(input.question, history, normalizedQuestion, cached, cacheStatus);
   }
 
-  private async rewriteQuestion(
+  private async routeMessage(
     question: string,
     history: NonNullable<AskQuestionRequest["history"]>
-  ): Promise<string> {
-    if (history.length === 0) return question;
+  ) {
     try {
-      return await this.dependencies.conversation.rewriteQuestion(question, history);
+      return await this.dependencies.conversation.routeMessage(question, history);
     } catch {
-      return question;
+      return { intent: "faq" as const, searchQuestion: question };
     }
   }
 

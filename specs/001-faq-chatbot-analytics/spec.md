@@ -46,6 +46,12 @@ anteriores, verificando que a resposta permanece natural, correta, fundamentada 
 8. **Given** que a busca encontrou duas ou mais FAQs plausíveis sem uma vencedora confiável,
    **When** o chatbot não pode escolher com segurança, **Then** apresenta até três perguntas
    distintas para o usuário selecionar.
+9. **Given** que o usuário envia apenas uma saudação, agradecimento, confirmação, despedida ou
+   reação sem solicitar informação, **When** a mensagem é interpretada, **Then** o chatbot responde
+   cordialmente sem transformá-la em pergunta, consultar a base, registrar consulta ou criar
+   pendência administrativa.
+10. **Given** que uma mensagem contém cortesia e também uma solicitação substantiva, **When** a
+    intenção é interpretada, **Then** a solicitação continua pelo fluxo de consulta de FAQ.
 
 ---
 
@@ -203,7 +209,13 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
   encontrem exatamente a FAQ “como redefino minha senha” e retornem sua resposta aprovada.
 - **FR-042**: A ação de apagar uma pergunta e resposta MUST ser implementada como desativação
   reversível, MUST permitir restauração por administrador e MUST preservar os dados, vínculos e
-  referências históricas da entrada.
+  histórico associados.
+- **FR-043**: Antes da recuperação, o sistema MUST usar a interpretação conversacional para
+  classificar a mensagem como consulta de FAQ ou interação social e MUST reescrever somente as
+  consultas de FAQ como perguntas independentes.
+- **FR-044**: Interações sociais sem solicitação de informação MUST receber uma resposta breve sem
+  pergunta adicional e MUST NOT acessar cache, embeddings ou recuperação de conhecimento, registrar
+  interação analítica ou criar pendência administrativa.
 
 ### Key Entities
 
