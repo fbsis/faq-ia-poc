@@ -18,7 +18,9 @@ import {
 export function useKnowledgeGaps(query: KnowledgeGapListQuery) {
   return useQuery({
     queryKey: ["knowledge-gaps", query],
-    queryFn: () => listKnowledgeGaps(query)
+    queryFn: () => listKnowledgeGaps(query),
+    refetchInterval: (result) =>
+      result.state.data?.items.some((gap) => gap.status === "resolving") ? 250 : false
   });
 }
 
