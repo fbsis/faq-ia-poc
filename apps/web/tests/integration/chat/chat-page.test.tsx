@@ -84,6 +84,25 @@ describe("public FAQ chat", () => {
     );
   });
 
+  it("renders a polite close without presenting it as an FAQ answer or another question", async () => {
+    server.use(
+      http.post("/api/v1/chat/questions", () =>
+        HttpResponse.json({
+          status: "social",
+          message: "Ok, obrigado! Fico feliz que tenha funcionado. Espero ter sido útil."
+        })
+      )
+    );
+    renderPage();
+
+    await userEvent.type(screen.getByLabelText(/digite sua pergunta/i), "Perfeito, funcionou aqui!");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+
+    expect(await screen.findByText(/fico feliz que tenha funcionado/i)).toBeVisible();
+    expect(screen.queryByText(/resposta baseada na FAQ aprovada/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/você pode explicar/i)).not.toBeInTheDocument();
+  });
+
   it("keeps previous user and assistant messages in the visible conversation", async () => {
     server.use(
       http.post("/api/v1/chat/questions", async ({ request }) => {

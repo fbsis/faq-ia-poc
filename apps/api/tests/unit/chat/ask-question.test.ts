@@ -46,14 +46,25 @@ class SearchFake implements FaqSearch {
 
 class ConversationAgentFake implements ConversationAgent {
   rewrittenQuestion = "Como redefino minha senha?";
+  routeCalls = 0;
   response = "Claro! Na tela de login, clique em “Esqueci minha senha”.";
   failResponse = false;
   unansweredResponse = "Você pode explicar qual etapa está tentando concluir?";
   failUnansweredResponse = false;
   unansweredCalls = 0;
 
-  rewriteQuestion(): Promise<string> {
-    return Promise.resolve(this.rewrittenQuestion);
+  routeMessage(question: string): Promise<
+    | { intent: "faq"; searchQuestion: string }
+    | { intent: "social"; response: string }
+  > {
+    this.routeCalls += 1;
+    if (question === "Perfeito, funcionou aqui!") {
+      return Promise.resolve({
+        intent: "social",
+        response: "Ok, obrigado! Fico feliz que tenha funcionado. Espero ter sido útil."
+      });
+    }
+    return Promise.resolve({ intent: "faq", searchQuestion: this.rewrittenQuestion });
   }
 
   createGroundedResponse(): Promise<string> {
@@ -134,6 +145,43 @@ function createUseCase(overrides?: {
 }
 
 describe("AskQuestion", () => {
+  it("closes the conversation politely without searching or recording an FAQ interaction", async () => {
+    const { useCase, search, interactions, unanswered, conversation } = createUseCase();
+
+    const response = await useCase.execute({
+      question: "Perfeito, funcionou aqui!",
+      history: [
+        { role: "user", content: "Como redefino minha senha?" },
+        {
+          role: "assistant",
+          content: "Use a opção “Esqueci minha senha” na tela de login.",
+          status: "answered"
+        }
+      ]
+    });
+
+    expect(response).toEqual({
+      status: "social",
+      message: "Ok, obrigado! Fico feliz que tenha funcionado. Espero ter sido útil."
+    });
+    expect(conversation.routeCalls).toBe(1);
+    expect(search.exactQuery).toBeNull();
+    expect(search.semanticCalls).toBe(0);
+    expect(search.fullTextCalls).toBe(0);
+    expect(interactions.records).toHaveLength(0);
+    expect(unanswered.records).toHaveLength(0);
+  });
+
+  it("does not treat a question containing thanks as a social acknowledgement", async () => {
+    const { useCase, search } = createUseCase();
+
+    await useCase.execute({
+      question: "Obrigado, mas como altero minha senha?"
+    });
+
+    expect(search.exactQuery).not.toBeNull();
+  });
+
   it("returns an approved exact answer and persists its immutable snapshot", async () => {
     const { useCase, interactions, conversation } = createUseCase();
     const response = await useCase.execute({ question: "Como redefino minha senha?" });

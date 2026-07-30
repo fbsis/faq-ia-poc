@@ -82,4 +82,16 @@ describe("chat contracts", () => {
       ).toBe(status);
     }
   );
+
+  it("accepts a social acknowledgement without an FAQ interaction", () => {
+    expect(
+      askQuestionResponseSchema.parse({
+        status: "social",
+        message: "Ok, obrigado! Fico feliz que tenha funcionado. Espero ter sido útil."
+      })
+    ).toEqual({
+      status: "social",
+      message: "Ok, obrigado! Fico feliz que tenha funcionado. Espero ter sido útil."
+    });
+  });
 });
