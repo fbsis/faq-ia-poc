@@ -143,15 +143,15 @@ integration("PostgresKnowledgeGapRepository", () => {
       resolution.id
     );
 
-    expect(await repository.get(gap.id)).toMatchObject({
+    const resolved = await repository.get(gap.id);
+    expect(resolved).toMatchObject({
       status: "resolved",
       resolvedFaqId: resolution.faqId,
-      currentResolution: { status: "completed", faqStatus: "active" },
-      events: expect.arrayContaining([
-        expect.objectContaining({ type: "resolution_started" }),
-        expect.objectContaining({ type: "resolved" })
-      ])
+      currentResolution: { status: "completed", faqStatus: "active" }
     });
+    expect(resolved?.events.map((event) => event.type)).toEqual(
+      expect.arrayContaining(["resolution_started", "resolved"])
+    );
   });
 });
 
