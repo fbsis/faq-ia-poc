@@ -73,15 +73,21 @@ HTTP / PostgreSQL / Redis / OpenAI adapters
 3. Normalize that query while retaining the original text for the interaction record.
 4. Check a versioned Redis key derived from the normalized standalone query.
 5. On a miss, create an OpenAI embedding using `text-embedding-3-small` with 1536 dimensions.
-6. Retrieve the top five active FAQ candidates using cosine similarity in pgvector.
-7. Accept exact normalized matches immediately; otherwise apply configurable thresholds:
+6. Run semantic pgvector and Portuguese lexical/fuzzy retrieval for every non-exact query. Lexical
+   retrieval covers canonical questions, aliases, and approved answers using stemming plus trigram
+   similarity for related words and small typing errors.
+7. Merge candidates by FAQ identity, retaining the strongest evidence from each retrieval strategy.
+8. Accept exact normalized matches immediately; otherwise apply configurable thresholds:
    - `>= 0.78`: answer with the best approved FAQ.
    - `0.70–0.78`: do not claim a definitive answer; invite rephrasing and optionally show approved suggestions.
    - `< 0.70`: record as unanswered and show the fallback channel.
-8. Cache successful retrievals for 15 minutes with jitter and unanswered results for at most 2 minutes.
-9. For an accepted FAQ, ask the conversational model for a concise Portuguese response using only
+9. Cache successful retrievals for 15 minutes with jitter and unanswered results for at most 2 minutes.
+10. For an accepted FAQ, ask the conversational model for a concise Portuguese response using only
    the selected question and answer. If generation fails, display the approved answer verbatim.
-10. Always persist the displayed response and approved-source snapshots, including cache hits.
+11. When no candidate is reliable, ask the model for a contextual clarification without factual
+    claims; provider failure returns deterministic reformulation guidance.
+12. Render assistant Markdown without enabling raw HTML and always persist the displayed response
+    and approved-source snapshots, including cache hits.
 
 Thresholds are configuration defaults, not permanent truth. They must be calibrated against Portuguese paraphrases, typos, acronyms, and unrelated questions before release. PostgreSQL full-text search is the deterministic fallback when OpenAI is unavailable; hybrid ranking can be added only if evaluation proves it necessary.
 

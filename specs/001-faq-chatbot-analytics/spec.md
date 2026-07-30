@@ -32,6 +32,8 @@ anteriores, verificando que a resposta permanece natural, correta, fundamentada 
    contexto recente e responde sem exigir que a pergunta completa seja repetida.
 5. **Given** que uma FAQ aprovada foi encontrada, **When** o chatbot responde, **Then** apresenta uma
    mensagem natural e direta que não adiciona fatos ausentes da fonte aprovada.
+6. **Given** que a resposta aprovada contém formatação Markdown, **When** ela é apresentada, **Then**
+   listas, ênfases, links e blocos de código são renderizados de forma legível e segura.
 
 ---
 
@@ -46,8 +48,11 @@ Como usuário, quero receber uma orientação clara quando nenhuma resposta conf
 **Acceptance Scenarios**:
 
 1. **Given** que não existe uma correspondência suficientemente relevante, **When** o usuário envia a pergunta, **Then** o chatbot informa que não encontrou resposta e sugere reformulação ou o canal de atendimento indicado.
-2. **Given** que uma pergunta não foi respondida, **When** a interação é concluída, **Then** ela fica registrada e disponível para análise administrativa.
-3. **Given** que ocorre uma falha recuperável, **When** a busca não pode ser concluída, **Then** o usuário recebe mensagem compreensível, mantém o texto digitado e pode tentar novamente.
+2. **Given** que a pergunta não encontra uma resposta confiável, **When** o chatbot responde,
+   **Then** solicita um esclarecimento relacionado à dúvida e oferece um próximo passo útil sem
+   inventar uma resposta.
+3. **Given** que uma pergunta não foi respondida, **When** a interação é concluída, **Then** ela fica registrada e disponível para análise administrativa.
+4. **Given** que ocorre uma falha recuperável, **When** a busca não pode ser concluída, **Then** o usuário recebe mensagem compreensível, mantém o texto digitado e pode tentar novamente.
 
 ---
 
@@ -164,6 +169,12 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
   ligação com essa fonte.
 - **FR-036**: Se a interpretação conversacional ou a geração da resposta falhar, o sistema MUST
   retornar de forma segura o conteúdo aprovado encontrado ou o fallback, sem inventar informação.
+- **FR-037**: O sistema MUST executar recuperação híbrida, combinando correspondência exata e por
+  aliases, busca semântica e busca lexical tolerante a flexões e pequenos erros de digitação.
+- **FR-038**: Quando nenhuma fonte for confiável, o sistema MUST produzir um pedido de
+  esclarecimento contextual sem afirmar fatos ausentes da base de conhecimento.
+- **FR-039**: Mensagens do assistente MUST renderizar Markdown comum de forma segura, sem executar
+  HTML bruto ou scripts fornecidos pelo conteúdo.
 
 ### Key Entities
 

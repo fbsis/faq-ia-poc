@@ -42,11 +42,21 @@
 
 ## Similarity retrieval
 
-**Decision**: Use cosine similarity, top five candidates, exact search as the validation baseline, and an HNSW cosine index for production scale. Start with configurable thresholds of 0.78 accepted and 0.70 ambiguity floor.
+**Decision**: Use hybrid retrieval on every non-exact question: pgvector cosine similarity plus
+Portuguese full-text stemming and `pg_trgm` word similarity across canonical questions, aliases,
+and approved answers. Merge duplicate FAQ candidates by their strongest confidence and request up
+to eight results per strategy. Keep exact search as the validation baseline and HNSW for vector
+scale. Start with configurable thresholds of 0.78 accepted and 0.70 ambiguity floor.
 
-**Rationale**: HNSW offers strong speed/recall without an index training phase. Explicit thresholds prioritize precision and prevent confident but incorrect responses.
+**Rationale**: Embeddings capture semantic meaning while lexical stemming, aliases, and trigram
+similarity recover domain vocabulary, related word forms, and small typing errors. Running both
+strategies avoids the previous behavior where lexical evidence was ignored whenever vector search
+returned any candidate. HNSW offers strong speed/recall without an index training phase. Explicit
+thresholds prioritize precision and prevent confident but incorrect responses.
 
-**Alternatives considered**: IVFFlat uses less memory but needs training/tuning. Vector-only fixed thresholds without evaluation are unsafe. Hybrid full-text/vector ranking is deferred until Portuguese evaluation data proves it beneficial.
+**Alternatives considered**: IVFFlat uses less memory but needs training/tuning. Vector-only fixed
+thresholds miss aliases and spelling variants. A separate search engine adds operational complexity
+that is not justified for the expected corpus.
 
 ## OpenAI responsibility and failure behavior
 
