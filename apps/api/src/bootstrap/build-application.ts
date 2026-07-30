@@ -17,6 +17,7 @@ import { loadEnvironment, type Environment } from "../infrastructure/config/envi
 import { registerErrorHandler } from "../infrastructure/http/errors.js";
 import { observabilityOptions } from "../infrastructure/http/observability.js";
 import { createCacheRedis, createQueueRedis } from "../infrastructure/redis/connections.js";
+import { registerBullBoard } from "../infrastructure/queue/bull-board.js";
 import { GetSession } from "../modules/auth/application/get-session.js";
 import { Login } from "../modules/auth/application/login.js";
 import { Logout } from "../modules/auth/application/logout.js";
@@ -184,6 +185,12 @@ export async function buildApplication(
     retryGapResolution,
     dismissKnowledgeGap,
     reopenKnowledgeGap
+  });
+  await registerBullBoard(app, {
+    getSession,
+    environment,
+    connection: resources.queue,
+    testMode: options.mode === "test"
   });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 

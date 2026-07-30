@@ -16,6 +16,10 @@ const environmentSchema = z
     EMBEDDING_GLOBAL_CONCURRENCY: z.coerce.number().int().positive().default(10),
     EMBEDDING_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
     EMBEDDING_RATE_LIMIT_DURATION_MS: z.coerce.number().int().positive().default(60_000),
+    BULL_BOARD_MUTATIONS_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
     OPENAI_CHAT_MODEL: z.string().default("gpt-5.6-luna"),

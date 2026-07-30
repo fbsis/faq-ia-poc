@@ -17,6 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@bull-board/api": "^8.4.0",
+    "@bull-board/fastify": "^8.4.0",
     "@faq/contracts": "workspace:*",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
