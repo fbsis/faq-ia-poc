@@ -1,6 +1,7 @@
 node_modules/
 .pnpm-store/
 dist/
+build/
 coverage/
 .vite/
 *.tsbuildinfo
@@ -8,6 +9,11 @@ coverage/
 .env.*
 !.env.example
 *.log
+*.tmp
+*.swp
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
 playwright-report/
 test-results/

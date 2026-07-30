@@ -5,7 +5,14 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/.vite/**"]
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "**/.vite/**",
+      "**/*.min.js"
+    ]
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
