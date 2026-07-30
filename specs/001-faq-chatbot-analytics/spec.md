@@ -37,9 +37,15 @@ anteriores, verificando que a resposta permanece natural, correta, fundamentada 
    continuação como “e se eu não tiver acesso?”, **Then** o chatbot interpreta a referência usando o
    contexto recente e responde sem exigir que a pergunta completa seja repetida.
 5. **Given** que uma FAQ aprovada foi encontrada, **When** o chatbot responde, **Then** apresenta uma
-   mensagem natural e direta que não adiciona fatos ausentes da fonte aprovada.
+   mensagem natural e direta, podendo organizar passos e acrescentar contexto geral claramente
+   qualificado, sem inventar políticas, prazos, links ou procedimentos específicos da organização.
 6. **Given** que a resposta aprovada contém formatação Markdown, **When** ela é apresentada, **Then**
    listas, ênfases, links e blocos de código são renderizados de forma legível e segura.
+7. **Given** que a busca encontrou somente uma FAQ plausível, **When** a confiança mínima é
+   atingida, **Then** o chatbot responde diretamente usando essa FAQ, sem pedir confirmação.
+8. **Given** que a busca encontrou duas ou mais FAQs plausíveis sem uma vencedora confiável,
+   **When** o chatbot não pode escolher com segurança, **Then** apresenta até três perguntas
+   distintas para o usuário selecionar.
 
 ---
 
@@ -231,8 +237,9 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **SC-014**: Tentativas repetidas ou concorrentes de resolver a mesma pendência criam no máximo uma nova entrada.
 - **SC-015**: Pelo menos 90% das perguntas de continuação do conjunto conversacional de validação
   recuperam a mesma entrada correta que sua versão independente.
-- **SC-016**: 100% das respostas conversacionais avaliadas permanecem semanticamente suportadas
-  pela entrada aprovada vinculada, sem acrescentar instruções ou fatos externos.
+- **SC-016**: 100% das respostas conversacionais avaliadas mantêm a entrada aprovada vinculada como
+  autoridade para fatos específicos da organização; qualquer contexto geral adicional é
+  claramente qualificado e não inventa políticas, prazos, links ou procedimentos internos.
 
 ## Assumptions
 

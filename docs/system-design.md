@@ -57,7 +57,7 @@ processes.
 
 ### Non-goals
 
-- Answers based on unapproved model knowledge or more than one FAQ source.
+- Organization-specific answers based on unapproved model knowledge or more than one FAQ source.
 - Human-agent conversations inside the platform.
 - Report export.
 - Multiple organizations or tenant isolation.
@@ -176,10 +176,13 @@ content version and follows the same outbox/BullMQ embedding path before becomin
 7. Results are merged by FAQ identity, retaining the strongest confidence for each candidate.
    The retrieval policy then applies configurable defaults:
    - `>= 0.78`: return the best approved FAQ;
-   - `0.70–0.78`: return an ambiguous result without asserting an answer;
+   - `0.70–0.78` with one plausible FAQ: answer using that unique candidate;
+   - `0.70–0.78` with multiple plausible FAQs: return up to three alternatives;
    - `< 0.70`: record the question as unanswered.
 8. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
-   using only that FAQ. Provider failure returns the approved answer verbatim.
+   with that FAQ as the authority for organization-specific facts. It may add clearly qualified
+   general explanations, but it cannot invent internal policies, links, deadlines, contacts, or
+   procedures. Provider failure returns the approved answer verbatim.
 9. If no candidate is reliable, the conversational adapter acknowledges the specific doubt and
    asks one useful clarification without answering from general model knowledge. Provider failure
    returns deterministic reformulation guidance.

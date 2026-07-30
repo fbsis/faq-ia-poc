@@ -42,6 +42,7 @@ export interface ConversationAgent {
 export interface CachedAnswer {
   readonly status: "answered" | "ambiguous" | "unanswered";
   readonly candidate?: FaqCandidate;
+  readonly suggestions?: FaqCandidate[];
 }
 
 export interface AnswerCache {

@@ -10,10 +10,12 @@ questions such as “and if I no longer have access?” can therefore be interpr
 of the previous topic. OpenAI rewrites a context-dependent message into a standalone search query,
 but that rewrite does not answer the user or add facts.
 
-When a reliable FAQ is found, the assistant responds naturally in Portuguese. The response may
-reorganize the approved content for clarity, but it must use only the selected FAQ question and
-answer as its factual source. If response generation fails, the exact approved answer is shown
-instead.
+When a reliable FAQ is found, the assistant responds naturally in Portuguese. The approved FAQ
+remains authoritative for organization-specific facts. The assistant may organize steps and add
+clearly qualified general explanations, definitions, or practical cautions, but it cannot invent
+organization policies, links, deadlines, contacts, guarantees, interface labels, or internal
+procedures. If a missing detail could materially change the action, it asks a follow-up. If
+response generation fails, the exact approved answer is shown instead.
 
 When no reliable FAQ is found, the assistant explicitly says that it does not know the answer and
 that it may need more explanation. It then asks one contextual clarification that may improve the
@@ -53,12 +55,14 @@ The default decision bands are:
 | Confidence | Behavior |
 |---|---|
 | `>= 0.78` | Answer using the best approved FAQ |
-| `0.70–0.78` | Present the match as a suggestion without claiming a definitive answer |
+| `0.70–0.78`, one plausible FAQ | Answer directly using that unique candidate |
+| `0.70–0.78`, multiple plausible FAQs | Present up to three distinct alternatives |
 | `< 0.70` | Record as unanswered; clarify first, then hand off after repeated misses |
 
 Exact approved matches, including equivalent normalized wording, are accepted immediately and
-return the approved answer rather than an ambiguous suggestion. The non-exact thresholds are
-configuration defaults and must be calibrated against a representative Portuguese evaluation set.
+return the approved answer rather than an ambiguous suggestion. Suggestions are reserved for
+genuine competition between multiple plausible entries. The non-exact thresholds are configuration
+defaults and must be calibrated against a representative Portuguese evaluation set.
 
 ## Markdown messages
 
@@ -74,7 +78,9 @@ HTML and script content returned by a model or stored answer is not executed by 
 
 ## Grounding and failure boundaries
 
-- User-facing factual answers come from one active, administrator-approved FAQ.
+- Organization-specific facts come from one active, administrator-approved FAQ.
+- General explanatory context must be clearly qualified and cannot invent organization-specific
+  behavior.
 - OpenAI response storage is disabled.
 - At most six recent anonymous messages and the selected FAQ source are sent for response
   generation.

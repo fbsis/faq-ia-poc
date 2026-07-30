@@ -149,7 +149,7 @@ export class AskQuestion {
     categoryId: string | null
   ): Promise<RetrievalDecision> {
     const exact = await this.dependencies.search.findExact(normalizedQuestion, categoryId);
-    if (exact) return decideRetrieval({ candidate: exact, exact: true });
+    if (exact) return decideRetrieval({ candidates: [exact], exact: true });
 
     const [semanticCandidates, lexicalCandidates] = await Promise.all([
       this.findSemantic(normalizedQuestion, categoryId),
@@ -159,7 +159,7 @@ export class AskQuestion {
     ]);
     const candidates = mergeCandidates(semanticCandidates, lexicalCandidates);
     return decideRetrieval({
-      candidate: candidates[0] ?? null,
+      candidates,
       exact: false,
       acceptanceThreshold: this.dependencies.acceptanceThreshold,
       ambiguityThreshold: this.dependencies.ambiguityThreshold
@@ -216,7 +216,8 @@ export class AskQuestion {
 function toCachedAnswer(decision: RetrievalDecision): CachedAnswer {
   return {
     status: decision.outcome,
-    ...("candidate" in decision && decision.candidate ? { candidate: decision.candidate } : {})
+    ...("candidate" in decision && decision.candidate ? { candidate: decision.candidate } : {}),
+    ...("suggestions" in decision ? { suggestions: decision.suggestions } : {})
   };
 }
 
@@ -241,7 +242,9 @@ function toResponse(
       interactionId,
       status: "ambiguous",
       message: "Encontrei uma pergunta parecida. Confirme se ela representa sua dúvida.",
-      suggestions: [result.candidate.canonicalQuestion]
+      suggestions: (result.suggestions ?? [result.candidate])
+        .slice(0, 3)
+        .map((candidate) => candidate.canonicalQuestion)
     };
   }
   return {

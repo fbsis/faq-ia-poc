@@ -2,27 +2,40 @@ import type { FaqCandidate } from "./faq-candidate.js";
 
 export type RetrievalDecision =
   | { outcome: "answered"; candidate: FaqCandidate }
-  | { outcome: "ambiguous"; candidate: FaqCandidate }
+  | {
+      outcome: "ambiguous";
+      candidate: FaqCandidate;
+      suggestions: FaqCandidate[];
+    }
   | { outcome: "unanswered"; candidate?: FaqCandidate };
 
 export interface RetrievalInput {
-  candidate: FaqCandidate | null;
+  candidates: FaqCandidate[];
   exact: boolean;
   acceptanceThreshold?: number;
   ambiguityThreshold?: number;
 }
 
 export function decideRetrieval(input: RetrievalInput): RetrievalDecision {
-  if (!input.candidate) return { outcome: "unanswered" };
-  if (input.exact) return { outcome: "answered", candidate: input.candidate };
+  const candidate = input.candidates[0];
+  if (!candidate) return { outcome: "unanswered" };
+  if (input.exact) return { outcome: "answered", candidate };
 
   const acceptance = input.acceptanceThreshold ?? 0.78;
   const ambiguity = input.ambiguityThreshold ?? 0.7;
-  if (input.candidate.confidence >= acceptance) {
-    return { outcome: "answered", candidate: input.candidate };
+  if (candidate.confidence >= acceptance) {
+    return { outcome: "answered", candidate };
   }
-  if (input.candidate.confidence >= ambiguity) {
-    return { outcome: "ambiguous", candidate: input.candidate };
+  const plausible = input.candidates.filter((item) => item.confidence >= ambiguity);
+  if (plausible.length === 1) {
+    return { outcome: "answered", candidate };
   }
-  return { outcome: "unanswered", candidate: input.candidate };
+  if (plausible.length > 1) {
+    return {
+      outcome: "ambiguous",
+      candidate,
+      suggestions: plausible.slice(0, 3)
+    };
+  }
+  return { outcome: "unanswered", candidate };
 }
