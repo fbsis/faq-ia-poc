@@ -153,13 +153,69 @@ integration("PostgresKnowledgeGapRepository", () => {
       expect.arrayContaining(["resolution_started", "resolved"])
     );
   });
+
+  it("dismisses and reopens a gap idempotently with append-only audit events", async () => {
+    const recorder = new PostgresUnansweredRecorder(pool);
+    await recorder.record(
+      interaction("00000000-0000-4000-8000-000000000501", "Pergunta fora do escopo")
+    );
+    const gap = (
+      await repository.list({ page: 1, pageSize: 20, status: "open", sort: "latest_desc" })
+    ).items.find((item) => item.representativeQuestion === "Pergunta fora do escopo")!;
+    const dismissCommand = {
+      knowledgeGapId: gap.id,
+      adminId: "00000000-0000-4000-8000-000000000001",
+      eventId: "00000000-0000-4000-8000-000000000502",
+      idempotencyKey: "dismiss-request-1",
+      input: {
+        reason: "Não pertence ao escopo do atendimento.",
+        expectedVersion: gap.version
+      },
+      createdAt: new Date("2026-07-30T14:00:00.000Z")
+    };
+
+    const dismissed = await repository.dismiss(dismissCommand);
+    await expect(
+      repository.dismiss({
+        ...dismissCommand,
+        eventId: "00000000-0000-4000-8000-000000000503"
+      })
+    ).resolves.toMatchObject({ status: "dismissed", version: dismissed.version });
+    const reopened = await repository.reopen({
+      knowledgeGapId: gap.id,
+      adminId: dismissCommand.adminId,
+      eventId: "00000000-0000-4000-8000-000000000504",
+      idempotencyKey: "reopen-request-1",
+      input: {
+        reason: "A dúvida voltou a ser relevante.",
+        expectedVersion: dismissed.version
+      },
+      createdAt: new Date("2026-07-30T15:00:00.000Z")
+    });
+
+    expect(reopened).toMatchObject({ status: "open", version: dismissed.version + 1 });
+    expect((await repository.get(gap.id))?.events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "dismissed",
+          reason: "Não pertence ao escopo do atendimento."
+        }),
+        expect.objectContaining({
+          type: "reopened",
+          reason: "A dúvida voltou a ser relevante."
+        })
+      ])
+    );
+  });
 });
 
 function interaction(id: string, rawQuestion: string): Interaction {
   return {
     id,
     rawQuestion,
-    normalizedQuestion: "como emitir segunda via",
+    normalizedQuestion: id.endsWith("501")
+      ? "pergunta fora do escopo"
+      : "como emitir segunda via",
     outcome: "unanswered",
     faqId: null,
     categoryId: null,
