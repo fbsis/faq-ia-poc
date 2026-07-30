@@ -34,7 +34,8 @@ The implementation favors KISS and SOLID through explicit ports, small use cases
 
 *GATE: Passed before Phase 0 and re-checked after Phase 1.*
 
-The project constitution is still an unratified placeholder and therefore provides no enforceable project gates. The stakeholder requirements establish these gates:
+The project constitution is ratified at version 1.0.0 and provides the project-wide gates below.
+The design satisfies those gates without a documented exception:
 
 - **KISS**: PASS — native pnpm workspaces; no monorepo orchestrator, event bus, microservices, or speculative generic abstractions.
 - **SOLID and dependency direction**: PASS — domain and application layers depend only on their own types and ports; infrastructure adapters depend inward.
