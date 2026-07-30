@@ -1,0 +1,51 @@
+{
+  "faqs": [
+    {
+      "id": "password-reset",
+      "question": "Como redefino minha senha?",
+      "aliases": ["esqueci minha senha", "trocar senha de acesso"]
+    },
+    {
+      "id": "invoice-copy",
+      "question": "Como emitir a segunda via da fatura?",
+      "aliases": ["baixar boleto novamente", "preciso de outra fatura"]
+    },
+    {
+      "id": "order-status",
+      "question": "Como acompanho o status do meu pedido?",
+      "aliases": ["rastrear minha compra", "onde está meu pedido"]
+    },
+    {
+      "id": "profile-update",
+      "question": "Como atualizo meus dados cadastrais?",
+      "aliases": ["alterar cadastro", "corrigir meus dados"]
+    },
+    {
+      "id": "subscription-cancel",
+      "question": "Como cancelo minha assinatura?",
+      "aliases": ["encerrar plano", "parar renovação da assinatura"]
+    }
+  ],
+  "cases": [
+    { "query": "Como redefino a minha senha?", "expectedFaqId": "password-reset" },
+    { "query": "Esqueci a senha da conta", "expectedFaqId": "password-reset" },
+    { "query": "Quero trocar minha senha de acesso", "expectedFaqId": "password-reset" },
+    { "query": "Não lembro a senha", "expectedFaqId": "password-reset" },
+    { "query": "Onde faço uma nova senha?", "expectedFaqId": "password-reset" },
+    { "query": "Preciso da segunda via da fatura", "expectedFaqId": "invoice-copy" },
+    { "query": "Como baixo o boleto novamente?", "expectedFaqId": "invoice-copy" },
+    { "query": "Quero emitir outra fatura", "expectedFaqId": "invoice-copy" },
+    { "query": "Não encontrei meu boleto", "expectedFaqId": "invoice-copy" },
+    { "query": "Como acompanho meu pedido?", "expectedFaqId": "order-status" },
+    { "query": "Onde está a minha compra?", "expectedFaqId": "order-status" },
+    { "query": "Quero rastrear o pedido", "expectedFaqId": "order-status" },
+    { "query": "Qual o status da compra?", "expectedFaqId": "order-status" },
+    { "query": "Como altero meus dados cadastrais?", "expectedFaqId": "profile-update" },
+    { "query": "Preciso corrigir meu cadastro", "expectedFaqId": "profile-update" },
+    { "query": "Onde atualizo os dados da conta?", "expectedFaqId": "profile-update" },
+    { "query": "Quero mudar minhas informações", "expectedFaqId": "profile-update" },
+    { "query": "Como cancelar a assinatura?", "expectedFaqId": "subscription-cancel" },
+    { "query": "Quero encerrar meu plano", "expectedFaqId": "subscription-cancel" },
+    { "query": "Como paro a renovação da assinatura?", "expectedFaqId": "subscription-cancel" }
+  ]
+}
