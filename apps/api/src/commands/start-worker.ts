@@ -1,9 +1,14 @@
 import { fileURLToPath } from "node:url";
-import { Worker } from "bullmq";
+import { Queue, Worker } from "bullmq";
 import { loadEnvironment } from "../infrastructure/config/environment.js";
 import { createDatabasePool } from "../infrastructure/database/client.js";
 import { createQueueRedis } from "../infrastructure/redis/connections.js";
-import { embeddingWorkerPolicy, FAQ_EMBEDDINGS_QUEUE } from "../infrastructure/queue/config.js";
+import {
+  applyEmbeddingQueuePolicy,
+  createEmbeddingQueuePolicy,
+  FAQ_EMBEDDINGS_QUEUE,
+  shutdownEmbeddingWorker
+} from "../infrastructure/queue/config.js";
 import { parsePrepareFaqEmbeddingJob } from "../infrastructure/queue/job-contracts.js";
 import { processFaqEmbedding } from "../infrastructure/queue/process-faq-embedding.js";
 import { DeterministicEmbeddingProvider } from "../modules/chat/adapters/outbound/deterministic-embedding-provider.js";
@@ -15,6 +20,21 @@ export async function startEmbeddingWorker(): Promise<void> {
   const pool = createDatabasePool(environment.DATABASE_URL);
   const redis = createQueueRedis(environment.QUEUE_REDIS_URL);
   const repository = new PostgresFaqRepository(pool);
+  const policy = createEmbeddingQueuePolicy({
+    prefix: environment.QUEUE_PREFIX,
+    attempts: environment.EMBEDDING_JOB_ATTEMPTS,
+    backoffDelay: environment.EMBEDDING_BACKOFF_MS,
+    backoffJitter: environment.EMBEDDING_BACKOFF_JITTER,
+    workerConcurrency: environment.EMBEDDING_WORKER_CONCURRENCY,
+    globalConcurrency: environment.EMBEDDING_GLOBAL_CONCURRENCY,
+    rateLimitMax: environment.EMBEDDING_RATE_LIMIT_MAX,
+    rateLimitDuration: environment.EMBEDDING_RATE_LIMIT_DURATION_MS
+  });
+  const queue = new Queue(FAQ_EMBEDDINGS_QUEUE, {
+    connection: redis,
+    prefix: policy.prefix
+  });
+  await applyEmbeddingQueuePolicy(queue, policy);
   const embeddings =
     environment.EMBEDDING_PROVIDER === "openai"
       ? new OpenAiEmbeddingProvider(environment.OPENAI_API_KEY!, environment.OPENAI_EMBEDDING_MODEL)
@@ -24,7 +44,7 @@ export async function startEmbeddingWorker(): Promise<void> {
     async (job) => {
       await processFaqEmbedding(parsePrepareFaqEmbeddingJob(job.data), repository, embeddings);
     },
-    { connection: redis, ...embeddingWorkerPolicy }
+    { connection: redis, prefix: policy.prefix, ...policy.workerOptions }
   );
   worker.on("failed", (job, error) => {
     console.error("FAQ embedding job failed", { jobId: job?.id, message: error.message });
@@ -38,10 +58,9 @@ export async function startEmbeddingWorker(): Promise<void> {
       );
     }
   });
-  const stop = async () => {
-    await worker.close();
-    await Promise.allSettled([redis.quit(), pool.end()]);
-  };
+  let stopping: Promise<void> | undefined;
+  const stop = () =>
+    (stopping ??= shutdownEmbeddingWorker({ worker, queue, redis, pool }));
   process.once("SIGINT", () => void stop());
   process.once("SIGTERM", () => void stop());
   await worker.waitUntilReady();

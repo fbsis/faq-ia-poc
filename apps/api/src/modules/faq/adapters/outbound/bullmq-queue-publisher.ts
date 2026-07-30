@@ -1,7 +1,8 @@
 import { Queue } from "bullmq";
 import type { Redis } from "ioredis";
 import {
-  embeddingJobOptions,
+  createEmbeddingQueuePolicy,
+  type EmbeddingQueuePolicy,
   FAQ_EMBEDDINGS_QUEUE
 } from "../../../../infrastructure/queue/config.js";
 import type { EmbeddingJobPublisher, OutboxMessage } from "../../application/ports.js";
@@ -9,13 +10,19 @@ import type { EmbeddingJobPublisher, OutboxMessage } from "../../application/por
 export class BullMqFaqPublisher implements EmbeddingJobPublisher {
   private readonly queue: Queue;
 
-  constructor(connection: Redis) {
-    this.queue = new Queue(FAQ_EMBEDDINGS_QUEUE, { connection });
+  constructor(
+    connection: Redis,
+    private readonly policy: EmbeddingQueuePolicy = createEmbeddingQueuePolicy()
+  ) {
+    this.queue = new Queue(FAQ_EMBEDDINGS_QUEUE, {
+      connection,
+      prefix: policy.prefix
+    });
   }
 
   async publish(payload: OutboxMessage["payload"], jobId: string): Promise<void> {
     await this.queue.add("prepare-faq-embedding", payload, {
-      ...embeddingJobOptions,
+      ...this.policy.jobOptions,
       jobId
     });
   }
