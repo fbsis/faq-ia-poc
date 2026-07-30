@@ -164,6 +164,7 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
+      await lockIdempotencyKey(client, command.adminId, command.idempotencyKey);
       const existing = await client.query<ResolutionRow>(
         `${resolutionProjection}
          WHERE r.admin_id = $1 AND r.idempotency_key = $2
@@ -292,6 +293,7 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
+      await lockIdempotencyKey(client, command.adminId, command.idempotencyKey);
       const existing = await client.query<{ gap_id: string; request_hash: string }>(
         `SELECT gap_id, request_hash
          FROM knowledge_gap_events
@@ -560,6 +562,16 @@ function hashActionRequest(
 
 function conflict(code: string, message: string): AppError {
   return new AppError(code, message, 409);
+}
+
+async function lockIdempotencyKey(
+  client: PoolClient,
+  adminId: string,
+  idempotencyKey: string
+): Promise<void> {
+  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+    `${adminId}:${idempotencyKey}`
+  ]);
 }
 
 function mapActionStatus(
