@@ -30,6 +30,33 @@ flowchart LR
     E --> R
 ```
 
+## Como a aplicação é montada
+
+O bootstrap foi separado para deixar explícita a diferença entre portas, adapters reais,
+composição e suporte de testes:
+
+```mermaid
+flowchart LR
+    P["ApplicationResources<br/>contrato das portas"] --> B["buildApplication<br/>composition root"]
+    R["createRuntimeResources<br/>PostgreSQL, Redis e OpenAI"] --> P
+    T["createTestResources<br/>adapters em memória"] --> P
+    B --> H["Fastify, casos de uso e rotas"]
+```
+
+- [`application-resources.ts`](../apps/api/src/bootstrap/application-resources.ts) descreve tudo
+  que a aplicação precisa, usando interfaces dos módulos.
+- [`runtime-resources.ts`](../apps/api/src/bootstrap/runtime-resources.ts) conecta essas interfaces
+  aos adapters reais de PostgreSQL, Redis e OpenAI.
+- [`build-application.ts`](../apps/api/src/bootstrap/build-application.ts) instancia casos de uso,
+  registra rotas e controla o ciclo de vida das conexões, sem conhecer doubles de teste.
+- [`tests/helpers/create-test-resources.ts`](../apps/api/tests/helpers/create-test-resources.ts)
+  monta a mesma aplicação com repositories em memória.
+
+**Motivação:** o composition root deve conhecer as implementações concretas necessárias para ligar
+o sistema, mas não deve implementar repositories. Os testes injetam outro conjunto de adapters
+pela mesma interface, demonstrando a inversão de dependência sem condicionais de ambiente dentro
+da aplicação.
+
 ## 1. A pergunta entra como conversa
 
 O React mantém o histórico recente da conversa e envia a nova mensagem para
