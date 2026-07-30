@@ -22,6 +22,7 @@ export interface EmbeddingProvider {
 export interface ConversationMessage {
   readonly role: "user" | "assistant";
   readonly content: string;
+  readonly status?: "answered" | "ambiguous" | "unanswered";
 }
 
 export interface ConversationAgent {

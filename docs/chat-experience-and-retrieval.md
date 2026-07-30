@@ -15,10 +15,18 @@ reorganize the approved content for clarity, but it must use only the selected F
 answer as its factual source. If response generation fails, the exact approved answer is shown
 instead.
 
-When no reliable FAQ is found, the assistant acknowledges the user's specific doubt and asks one
-contextual clarification that may improve the next search. It does not guess an answer or use
-general model knowledge. If OpenAI is unavailable, the application uses deterministic guidance
-asking for the expected result and the step where the problem occurred.
+When no reliable FAQ is found, the assistant explicitly says that it does not know the answer and
+that it may need more explanation. It then asks one contextual clarification that may improve the
+next search. It does not guess an answer or use general model knowledge. If OpenAI is unavailable,
+the application uses a deterministic clarification asking what the user is trying to do and at
+which step the doubt appeared.
+
+Each assistant message in the bounded browser history carries its retrieval outcome. After two
+previous `unanswered` outcomes, a third unanswered attempt no longer asks for more context. It says
+that the information is not available in the approved knowledge base and informs the user that a
+person from the team will contact them to explain the process. This threshold is enforced by the
+application, not delegated to OpenAI. The current public chat remains anonymous and does not yet
+collect or dispatch contact details; that operational follow-up requires a separate contact flow.
 
 ## Hybrid retrieval
 
@@ -43,7 +51,7 @@ The default decision bands are:
 |---|---|
 | `>= 0.78` | Answer using the best approved FAQ |
 | `0.70–0.78` | Present the match as a suggestion without claiming a definitive answer |
-| `< 0.70` | Record the interaction as unanswered and request contextual clarification |
+| `< 0.70` | Record as unanswered; clarify first, then hand off after repeated misses |
 
 Exact approved matches are accepted immediately. The non-exact thresholds are configuration
 defaults and must be calibrated against a representative Portuguese evaluation set.
@@ -69,6 +77,8 @@ HTML and script content returned by a model or stored answer is not executed by 
 - Embedding failure does not disable exact, full-text, or fuzzy PostgreSQL retrieval.
 - Response-generation failure displays the approved answer verbatim.
 - Clarification-generation failure returns safe deterministic guidance.
+- Two previous unanswered assistant outcomes trigger deterministic human-handoff wording on the
+  next unanswered attempt.
 - Redis failures bypass the cache and do not stop the chat.
 - The displayed response and approved source snapshots are stored with the interaction for audit.
 

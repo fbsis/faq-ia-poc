@@ -27,9 +27,11 @@ conversation context, and produces natural responses grounded in one approved FA
 PostgreSQL is the business source of truth. A disposable Redis instance accelerates repeated
 queries, while a separate persistent Redis instance stores BullMQ operational state. FAQ
 embedding work is committed through a PostgreSQL outbox, relayed to BullMQ, and completed by an
-idempotent worker. Low-confidence questions receive a contextual clarification without factual
-claims and become durable, administratively resolvable knowledge gaps. Assistant messages support
-safe Markdown without raw HTML execution.
+idempotent worker. Low-confidence questions explicitly acknowledge uncertainty, request contextual
+clarification without factual claims, and become durable, administratively resolvable knowledge
+gaps. After two prior unanswered attempts, the next miss uses deterministic human-handoff wording
+instead of asking for more detail. Assistant messages support safe Markdown without raw HTML
+execution.
 
 The application is a pnpm TypeScript monorepo with a React/Vite frontend, a Fastify API, Docker
 development and production environments, and independently runnable API, relay, and worker

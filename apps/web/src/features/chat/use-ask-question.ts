@@ -88,7 +88,8 @@ function toConversationHistory(turns: ChatTurn[]): ConversationMessage[] {
       { role: "user" as const, content: turn.question },
       {
         role: "assistant" as const,
-        content: turn.response.answer ?? turn.response.message
+        content: turn.response.answer ?? turn.response.message,
+        status: turn.response.status
       }
     ])
     .slice(-6);

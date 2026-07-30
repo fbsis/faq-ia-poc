@@ -484,3 +484,34 @@ with hybrid fuzzy retrieval.
 
 **Checkpoint**: Markdown is readable and safe, unanswered replies ask for useful context, and FAQ
 retrieval combines vector meaning with Portuguese lexical and fuzzy evidence.
+
+---
+
+## Phase 11: Repeated Unanswered Handoff
+
+**Purpose**: Make uncertainty explicit and stop requesting more context after repeated unsuccessful
+searches in the same anonymous conversation.
+
+### Tests
+
+- [X] T174 [US2] Add assistant outcome history, explicit uncertainty, deterministic fallback, and
+  repeated-unanswered handoff coverage in `packages/contracts/src/chat.test.ts`,
+  `apps/api/tests/unit/chat/ask-question.test.ts`,
+  `apps/api/tests/unit/chat/unanswered-question.test.ts`,
+  `apps/api/tests/integration/chat/retrieval-failures.test.ts`,
+  `apps/web/tests/integration/chat/chat-page.test.tsx`, and
+  `apps/web/tests/integration/chat/unanswered-chat.test.tsx`
+
+### Implementation
+
+- [X] T175 [US2] Carry assistant outcomes in bounded browser history, keep metadata out of OpenAI
+  inputs, explicitly acknowledge unknown answers, and return deterministic human-handoff wording
+  after two previous unanswered outcomes in `packages/contracts/src/chat.ts`,
+  `apps/api/src/modules/chat/application/ports.ts`,
+  `apps/api/src/modules/chat/application/ask-question.ts`,
+  `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`,
+  `apps/api/src/bootstrap/build-application.ts`, and
+  `apps/web/src/features/chat/use-ask-question.ts`
+
+**Checkpoint**: The first two unanswered attempts request useful context; the third consecutive
+miss admits that the knowledge base lacks the information and announces human follow-up.

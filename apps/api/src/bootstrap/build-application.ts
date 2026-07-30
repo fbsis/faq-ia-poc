@@ -231,7 +231,7 @@ const deterministicConversationAgent: ConversationAgent = {
   createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer),
   createUnansweredResponse: () =>
     Promise.resolve(
-      "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+      "Você pode explicar melhor o que está tentando fazer e em qual etapa surgiu a dúvida?"
     )
 };
 

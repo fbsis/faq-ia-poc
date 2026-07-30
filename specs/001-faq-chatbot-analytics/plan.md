@@ -84,8 +84,10 @@ HTTP / PostgreSQL / Redis / OpenAI adapters
 9. Cache successful retrievals for 15 minutes with jitter and unanswered results for at most 2 minutes.
 10. For an accepted FAQ, ask the conversational model for a concise Portuguese response using only
    the selected question and answer. If generation fails, display the approved answer verbatim.
-11. When no candidate is reliable, ask the model for a contextual clarification without factual
-    claims; provider failure returns deterministic reformulation guidance.
+11. When no candidate is reliable, explicitly acknowledge that the answer is unknown and ask the
+    model only for a contextual clarification without factual claims; provider failure returns
+    deterministic reformulation guidance. After two prior unanswered outcomes, the next miss skips
+    clarification and returns deterministic human-handoff wording.
 12. Render assistant Markdown without enabling raw HTML and always persist the displayed response
     and approved-source snapshots, including cache hits.
 

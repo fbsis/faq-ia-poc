@@ -607,19 +607,34 @@ components:
         history:
           type: array
           maxItems: 6
-          description: Recent anonymous messages in chronological order.
+          description: Recent anonymous messages and assistant retrieval outcomes in chronological order.
           items:
-            type: object
-            additionalProperties: false
-            required: [role, content]
-            properties:
-              role:
-                type: string
-                enum: [user, assistant]
-              content:
-                type: string
-                minLength: 1
-                maxLength: 1000
+            oneOf:
+              - type: object
+                additionalProperties: false
+                required: [role, content]
+                properties:
+                  role:
+                    type: string
+                    const: user
+                  content:
+                    type: string
+                    minLength: 1
+                    maxLength: 1000
+              - type: object
+                additionalProperties: false
+                required: [role, content]
+                properties:
+                  role:
+                    type: string
+                    const: assistant
+                  content:
+                    type: string
+                    minLength: 1
+                    maxLength: 1000
+                  status:
+                    type: string
+                    enum: [answered, ambiguous, unanswered]
     AskQuestionResponse:
       type: object
       required: [interactionId, status, message]

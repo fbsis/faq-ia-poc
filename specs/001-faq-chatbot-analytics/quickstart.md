@@ -102,9 +102,13 @@ Expected outcomes:
 ## Validate unanswered behavior
 
 1. Ask an unrelated question with no FAQ candidate.
-2. Confirm the chatbot explicitly reports that no answer was found and provides the configured fallback guidance.
-3. Confirm the dashboard lists the question as unanswered.
-4. Confirm no generated or unrelated answer is presented.
+2. Confirm the chatbot explicitly says that it does not know and asks for a useful explanation.
+3. Rephrase the unknown question twice and confirm the third unanswered response says that the
+   information is absent from the knowledge base and that a person will contact the user.
+4. Confirm the dashboard lists all three interactions as unanswered.
+5. Confirm no generated or unrelated factual answer is presented.
+6. Note that the current anonymous chat does not collect contact details; validate the actual
+   outbound contact only after that separate operational flow exists.
 
 ## Validate unanswered administration
 

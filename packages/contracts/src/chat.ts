@@ -1,12 +1,25 @@
 import { z } from "zod";
 import { identifierSchema } from "./common.js";
 
-export const conversationMessageSchema = z
+const userConversationMessageSchema = z
   .object({
-    role: z.enum(["user", "assistant"]),
+    role: z.literal("user"),
     content: z.string().trim().min(1).max(1000)
   })
   .strict();
+
+const assistantConversationMessageSchema = z
+  .object({
+    role: z.literal("assistant"),
+    content: z.string().trim().min(1).max(1000),
+    status: z.enum(["answered", "ambiguous", "unanswered"]).optional()
+  })
+  .strict();
+
+export const conversationMessageSchema = z.discriminatedUnion("role", [
+  userConversationMessageSchema,
+  assistantConversationMessageSchema
+]);
 
 export const askQuestionRequestSchema = z
   .object({

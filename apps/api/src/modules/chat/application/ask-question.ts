@@ -31,6 +31,14 @@ interface AskQuestionDependencies {
   ambiguityThreshold?: number;
 }
 
+const UNKNOWN_ANSWER_PREFIX =
+  "Não sei responder essa pergunta com segurança ainda. Talvez eu precise de mais explicações.";
+const CLARIFICATION_FALLBACK =
+  "Você pode explicar melhor o que está tentando fazer e em qual etapa surgiu a dúvida?";
+const HUMAN_HANDOFF_MESSAGE =
+  "Não sei responder essa pergunta porque essa informação não está disponível na nossa base de conhecimento. Uma pessoa da nossa equipe entrará em contato para explicar como isso funciona.";
+const UNANSWERED_ATTEMPTS_BEFORE_HANDOFF = 2;
+
 export class AskQuestion {
   constructor(private readonly dependencies: AskQuestionDependencies) {}
 
@@ -122,10 +130,17 @@ export class AskQuestion {
     result: CachedAnswer
   ): Promise<string | null> {
     if (result.status !== "unanswered") return null;
+    if (countPreviousUnanswered(history) >= UNANSWERED_ATTEMPTS_BEFORE_HANDOFF) {
+      return HUMAN_HANDOFF_MESSAGE;
+    }
     try {
-      return await this.dependencies.conversation.createUnansweredResponse({ question, history });
+      const clarification = await this.dependencies.conversation.createUnansweredResponse({
+        question,
+        history
+      });
+      return `${UNKNOWN_ANSWER_PREFIX} ${clarification}`;
     } catch {
-      return "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa.";
+      return `${UNKNOWN_ANSWER_PREFIX} ${CLARIFICATION_FALLBACK}`;
     }
   }
 
@@ -232,10 +247,20 @@ function toResponse(
   return {
     interactionId,
     status: "unanswered",
-    message:
-      displayedMessage ??
-      "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+    message: displayedMessage ?? `${UNKNOWN_ANSWER_PREFIX} ${CLARIFICATION_FALLBACK}`
   };
+}
+
+function countPreviousUnanswered(history: NonNullable<AskQuestionRequest["history"]>): number {
+  const outcomes = history
+    .filter((message) => message.role === "assistant")
+    .map((message) => message.status);
+  let consecutiveUnanswered = 0;
+  for (const outcome of outcomes.reverse()) {
+    if (outcome !== "unanswered") break;
+    consecutiveUnanswered += 1;
+  }
+  return consecutiveUnanswered;
 }
 
 function mergeCandidates(...groups: FaqCandidate[][]): FaqCandidate[] {

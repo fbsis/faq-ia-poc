@@ -172,9 +172,13 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **FR-037**: O sistema MUST executar recuperação híbrida, combinando correspondência exata e por
   aliases, busca semântica e busca lexical tolerante a flexões e pequenos erros de digitação.
 - **FR-038**: Quando nenhuma fonte for confiável, o sistema MUST produzir um pedido de
-  esclarecimento contextual sem afirmar fatos ausentes da base de conhecimento.
+  esclarecimento contextual, declarar explicitamente que não sabe a resposta e não afirmar fatos
+  ausentes da base de conhecimento.
 - **FR-039**: Mensagens do assistente MUST renderizar Markdown comum de forma segura, sem executar
   HTML bruto ou scripts fornecidos pelo conteúdo.
+- **FR-040**: Após duas respostas anteriores sem conteúdo confiável na conversa atual, uma nova
+  tentativa sem resposta MUST deixar de solicitar esclarecimentos e MUST informar deterministicamente
+  que a informação não está na base e que uma pessoa da equipe entrará em contato para explicá-la.
 
 ### Key Entities
 
