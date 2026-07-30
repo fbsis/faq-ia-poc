@@ -201,4 +201,56 @@ describe("FAQ administration", () => {
       })
     );
   });
+
+  it("can resolve an open gap by updating an existing FAQ", async () => {
+    const gap = {
+      id: "00000000-0000-4000-8000-000000000101",
+      representativeQuestion: "Como emitir a segunda via?",
+      status: "open",
+      occurrenceCount: 1,
+      firstOccurredAt: "2026-07-30T12:00:00.000Z",
+      lastOccurredAt: "2026-07-30T12:00:00.000Z",
+      version: 2,
+      createdAt: "2026-07-30T12:00:00.000Z",
+      updatedAt: "2026-07-30T12:00:00.000Z",
+      occurrences: [],
+      events: []
+    };
+    let submitted: Record<string, unknown> | undefined;
+    server.use(
+      http.get("/api/v1/categories", () => HttpResponse.json([category])),
+      http.get("/api/v1/faqs", () =>
+        HttpResponse.json({ items: [faq], page: 1, pageSize: 20, total: 1 })
+      ),
+      http.get(`/api/v1/knowledge-gaps/${gap.id}`, () => HttpResponse.json(gap)),
+      http.post(`/api/v1/knowledge-gaps/${gap.id}/resolutions`, async ({ request }) => {
+        submitted = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(
+          {
+            id: "00000000-0000-4000-8000-000000000301",
+            knowledgeGapId: gap.id,
+            mode: "update",
+            faqId: faq.id,
+            faqStatus: "embedding_pending",
+            status: "pending",
+            createdAt: "2026-07-30T13:00:00.000Z"
+          },
+          { status: 202 }
+        );
+      })
+    );
+    renderPage(`/admin/faqs?knowledgeGapId=${gap.id}`);
+
+    await userEvent.selectOptions(await screen.findByLabelText(/modo da resolução/i), "update");
+    await userEvent.selectOptions(screen.getByLabelText(/resposta existente/i), faq.id);
+    await userEvent.click(screen.getByRole("button", { name: /salvar e resolver pergunta/i }));
+
+    await waitFor(() =>
+      expect(submitted).toMatchObject({
+        mode: "update",
+        faqId: faq.id,
+        expectedVersion: gap.version
+      })
+    );
+  });
 });

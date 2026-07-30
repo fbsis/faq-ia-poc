@@ -124,4 +124,50 @@ describe("knowledge gap administration", () => {
 
     expect(await screen.findByRole("button", { name: /reabrir pendência/i })).toBeVisible();
   });
+
+  it("retries a failed resolution and reports a stale conflict without losing context", async () => {
+    const failedGap = {
+      ...gap,
+      version: 4,
+      currentResolution: {
+        id: "00000000-0000-4000-8000-000000000301",
+        knowledgeGapId: gap.id,
+        mode: "create",
+        faqId: "00000000-0000-4000-8000-000000000302",
+        faqStatus: "embedding_failed",
+        status: "failed",
+        errorCode: "EMBEDDING_FAILED",
+        createdAt: "2026-07-30T12:00:00.000Z",
+        completedAt: "2026-07-30T12:01:00.000Z"
+      },
+      occurrences: [],
+      events: []
+    };
+    server.use(
+      http.get("/api/v1/knowledge-gaps", () =>
+        HttpResponse.json({ items: [failedGap], page: 1, pageSize: 20, total: 1 })
+      ),
+      http.get(`/api/v1/knowledge-gaps/${gap.id}`, () => HttpResponse.json(failedGap)),
+      http.post(`/api/v1/knowledge-gaps/${gap.id}/resolution-retries`, () =>
+        HttpResponse.json(
+          {
+            code: "KNOWLEDGE_GAP_VERSION_CONFLICT",
+            message: "The knowledge gap changed.",
+            requestId: "request-1"
+          },
+          { status: 409 }
+        )
+      )
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /ver detalhes/i }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /tentar resolução novamente/i })
+    );
+    expect(
+      await screen.findByText(/a pendência mudou.*recarregue os dados/i)
+    ).toBeVisible();
+    expect(screen.getAllByText(gap.representativeQuestion)).toHaveLength(2);
+  });
 });

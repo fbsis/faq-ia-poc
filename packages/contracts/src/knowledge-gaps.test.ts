@@ -5,6 +5,7 @@ import {
   knowledgeGapListQuerySchema,
   knowledgeGapPageSchema,
   reopenKnowledgeGapInputSchema,
+  retryGapResolutionInputSchema,
   resolveKnowledgeGapInputSchema
 } from "./knowledge-gaps.js";
 
@@ -96,6 +97,9 @@ describe("knowledge gap contracts", () => {
     ).toBeDefined();
     expect(reopenKnowledgeGapInputSchema.parse({ expectedVersion: 3 })).toEqual({
       expectedVersion: 3
+    });
+    expect(retryGapResolutionInputSchema.parse({ expectedVersion: 4 })).toEqual({
+      expectedVersion: 4
     });
   });
 });

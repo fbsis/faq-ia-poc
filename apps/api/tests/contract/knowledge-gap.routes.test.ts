@@ -138,6 +138,41 @@ describe("knowledge gap HTTP contract", () => {
     });
     await app.close();
   });
+
+  it("retries a failed resolution through an authorized idempotent endpoint", async () => {
+    const knowledgeGap: KnowledgeGapDetails = {
+      ...openKnowledgeGap(),
+      version: 4,
+      currentResolution: {
+        id: "00000000-0000-4000-8000-000000000301",
+        knowledgeGapId: "00000000-0000-4000-8000-000000000101",
+        mode: "create",
+        faqId: "00000000-0000-4000-8000-000000000302",
+        faqStatus: "embedding_failed",
+        status: "failed",
+        errorCode: "EMBEDDING_FAILED",
+        createdAt: "2026-07-30T12:00:00.000Z",
+        completedAt: "2026-07-30T12:01:00.000Z"
+      }
+    };
+    const app = await buildApplication({ mode: "test", testOverrides: { knowledgeGap } });
+    const auth = await login(app);
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/knowledge-gaps/${knowledgeGap.id}/resolution-retries`,
+      headers: { ...auth, "idempotency-key": "resolution-retry-1" },
+      payload: { expectedVersion: knowledgeGap.version }
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(gapResolutionSchema.parse(response.json())).toMatchObject({
+      knowledgeGapId: knowledgeGap.id,
+      faqId: knowledgeGap.currentResolution.faqId,
+      status: "pending",
+      faqStatus: "embedding_pending"
+    });
+    await app.close();
+  });
 });
 
 function openKnowledgeGap(): KnowledgeGapDetails {
