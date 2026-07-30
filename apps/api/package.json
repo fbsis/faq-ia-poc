@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/commands/start-api.ts",
+    "dev:worker": "tsx watch src/commands/start-worker.ts",
+    "dev:relay": "tsx watch src/commands/relay-outbox.ts",
     "start": "node dist/commands/start-api.js",
     "start:worker": "node dist/commands/start-worker.js",
     "start:relay": "node dist/commands/relay-outbox.js",

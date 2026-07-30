@@ -17,6 +17,26 @@ import { registerAuthRoutes } from "../modules/auth/adapters/inbound/http/auth-r
 import { ScryptPasswordHasher } from "../modules/auth/adapters/outbound/password-hasher.js";
 import { PostgresAuthRepository } from "../modules/auth/adapters/outbound/postgres-auth-repository.js";
 import type { Admin, AdminSession } from "../modules/auth/domain/admin.js";
+import { registerChatRoutes } from "../modules/chat/adapters/inbound/http/chat-routes.js";
+import { DeterministicEmbeddingProvider } from "../modules/chat/adapters/outbound/deterministic-embedding-provider.js";
+import { OpenAiEmbeddingProvider } from "../modules/chat/adapters/outbound/openai-embedding-provider.js";
+import { PostgresFaqSearch } from "../modules/chat/adapters/outbound/postgres-faq-search.js";
+import {
+  PostgresInteractionRepository,
+  PostgresKnowledgeVersion
+} from "../modules/chat/adapters/outbound/postgres-interaction-repository.js";
+import { RedisAnswerCache } from "../modules/chat/adapters/outbound/redis-answer-cache.js";
+import { AskQuestion } from "../modules/chat/application/ask-question.js";
+import type {
+  AnswerCache,
+  CachedAnswer,
+  EmbeddingProvider,
+  FaqSearch,
+  InteractionRepository,
+  KnowledgeVersion
+} from "../modules/chat/application/ports.js";
+import type { FaqCandidate } from "../modules/chat/domain/faq-candidate.js";
+import type { Interaction } from "../modules/chat/domain/interaction.js";
 import { randomIds, systemClock } from "../shared/domain/ports.js";
 
 export interface BuildApplicationOptions {
@@ -67,8 +87,16 @@ export async function buildApplication(
   );
   const getSession = new GetSession(resources.auth, resources.auth, systemClock);
   const logout = new Logout(resources.auth, systemClock);
+  const askQuestion = new AskQuestion({
+    ...resources.chat,
+    clock: systemClock,
+    ids: randomIds,
+    acceptanceThreshold: environment.FAQ_ACCEPTANCE_THRESHOLD,
+    ambiguityThreshold: environment.FAQ_AMBIGUITY_THRESHOLD
+  });
 
   registerAuthRoutes(app, { environment, login, getSession, logout });
+  registerChatRoutes(app, askQuestion);
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
   app.addHook("onClose", async () => {
@@ -85,6 +113,13 @@ export async function buildApplication(
 interface Resources {
   auth: AdminRepository & SessionRepository;
   passwords: ScryptPasswordHasher;
+  chat: {
+    search: FaqSearch;
+    cache: AnswerCache;
+    interactions: InteractionRepository;
+    embeddings: EmbeddingProvider;
+    knowledgeVersion: KnowledgeVersion;
+  };
   pool?: DatabasePool;
   cache?: Redis;
   queue?: Redis;
@@ -92,11 +127,23 @@ interface Resources {
 
 function createRuntimeResources(environment: Environment): Resources {
   const pool = createDatabasePool(environment.DATABASE_URL);
+  const cache = createCacheRedis(environment.CACHE_REDIS_URL);
+  const embeddings =
+    environment.EMBEDDING_PROVIDER === "openai"
+      ? new OpenAiEmbeddingProvider(environment.OPENAI_API_KEY!, environment.OPENAI_EMBEDDING_MODEL)
+      : new DeterministicEmbeddingProvider();
   return {
     auth: new PostgresAuthRepository(pool),
     passwords: new ScryptPasswordHasher(),
+    chat: {
+      search: new PostgresFaqSearch(pool),
+      cache: new RedisAnswerCache(cache),
+      interactions: new PostgresInteractionRepository(pool),
+      embeddings,
+      knowledgeVersion: new PostgresKnowledgeVersion(pool)
+    },
     pool,
-    cache: createCacheRedis(environment.CACHE_REDIS_URL),
+    cache,
     queue: createQueueRedis(environment.QUEUE_REDIS_URL)
   };
 }
@@ -110,7 +157,17 @@ async function createTestResources(environment: Environment): Promise<Resources>
     passwordHash: await passwords.hash(environment.ADMIN_PASSWORD),
     active: true
   };
-  return { auth: new MemoryAuthRepository(admin), passwords };
+  return {
+    auth: new MemoryAuthRepository(admin),
+    passwords,
+    chat: {
+      search: new MemoryFaqSearch(),
+      cache: new MemoryAnswerCache(),
+      interactions: new MemoryInteractionRepository(),
+      embeddings: new DeterministicEmbeddingProvider(),
+      knowledgeVersion: { current: () => Promise.resolve(1) }
+    }
+  };
 }
 
 class MemoryAuthRepository implements AdminRepository, SessionRepository {
@@ -141,6 +198,53 @@ class MemoryAuthRepository implements AdminRepository, SessionRepository {
   revokeSession(tokenHash: string, revokedAt: Date): Promise<void> {
     const session = this.sessions.get(tokenHash);
     if (session) session.revokedAt = revokedAt;
+    return Promise.resolve();
+  }
+}
+
+const testFaq: FaqCandidate = {
+  id: "00000000-0000-4000-8000-000000000002",
+  canonicalQuestion: "Como redefino minha senha?",
+  answer: "Na tela de login, selecione “Esqueci minha senha”.",
+  category: {
+    id: "00000000-0000-4000-8000-000000000001",
+    name: "Conta"
+  },
+  confidence: 1
+};
+
+class MemoryFaqSearch implements FaqSearch {
+  findExact(normalizedQuestion: string): Promise<FaqCandidate | null> {
+    return Promise.resolve(normalizedQuestion === "como redefino minha senha" ? testFaq : null);
+  }
+
+  findSemantic(): Promise<FaqCandidate[]> {
+    return Promise.resolve([{ ...testFaq, confidence: 0.82 }]);
+  }
+
+  findFullText(): Promise<FaqCandidate[]> {
+    return Promise.resolve([]);
+  }
+}
+
+class MemoryAnswerCache implements AnswerCache {
+  private readonly values = new Map<string, CachedAnswer>();
+
+  get(key: string): Promise<CachedAnswer | null> {
+    return Promise.resolve(this.values.get(key) ?? null);
+  }
+
+  set(key: string, value: CachedAnswer): Promise<void> {
+    this.values.set(key, value);
+    return Promise.resolve();
+  }
+}
+
+class MemoryInteractionRepository implements InteractionRepository {
+  readonly values: Interaction[] = [];
+
+  save(interaction: Interaction): Promise<void> {
+    this.values.push(interaction);
     return Promise.resolve();
   }
 }

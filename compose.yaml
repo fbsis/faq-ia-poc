@@ -72,7 +72,7 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: development
-    command: ["pnpm", "--filter", "@faq/api", "start:relay"]
+    command: ["pnpm", "--filter", "@faq/api", "dev:relay"]
     env_file: [.env]
     volumes:
       - .:/workspace
@@ -86,7 +86,7 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: development
-    command: ["pnpm", "--filter", "@faq/api", "start:worker"]
+    command: ["pnpm", "--filter", "@faq/api", "dev:worker"]
     env_file: [.env]
     volumes:
       - .:/workspace

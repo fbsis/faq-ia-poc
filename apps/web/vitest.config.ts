@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     name: "web",
     environment: "jsdom",
+    globals: true,
     include: ["tests/**/*.test.tsx"],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
