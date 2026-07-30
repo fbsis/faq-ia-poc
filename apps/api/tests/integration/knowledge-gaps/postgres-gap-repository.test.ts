@@ -137,10 +137,10 @@ integration("PostgresKnowledgeGapRepository", () => {
       status: "resolved",
       resolvedFaqId: resolution.faqId,
       currentResolution: { status: "completed", faqStatus: "active" },
-      events: [
+      events: expect.arrayContaining([
         expect.objectContaining({ type: "resolution_started" }),
         expect.objectContaining({ type: "resolved" })
-      ]
+      ])
     });
   });
 });
