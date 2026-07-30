@@ -8,7 +8,8 @@ const migrationUrls = [
   new URL("./migrations/0002_conversational_answers.sql", import.meta.url),
   new URL("./migrations/0003_hybrid_faq_search.sql", import.meta.url),
   new URL("./migrations/0004_faq_administration.sql", import.meta.url),
-  new URL("./migrations/0005_knowledge_gap_resolutions.sql", import.meta.url)
+  new URL("./migrations/0005_knowledge_gap_resolutions.sql", import.meta.url),
+  new URL("./migrations/0006_gap_action_idempotency.sql", import.meta.url)
 ];
 
 export async function runMigrations(pool: DatabasePool): Promise<void> {

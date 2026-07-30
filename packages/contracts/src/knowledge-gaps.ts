@@ -128,3 +128,5 @@ export type KnowledgeGapDetails = z.infer<typeof knowledgeGapDetailsSchema>;
 export type GapResolution = z.infer<typeof gapResolutionSchema>;
 export type KnowledgeGapEvent = z.infer<typeof knowledgeGapEventSchema>;
 export type ResolveKnowledgeGapInput = z.infer<typeof resolveKnowledgeGapInputSchema>;
+export type DismissKnowledgeGapInput = z.infer<typeof dismissKnowledgeGapInputSchema>;
+export type ReopenKnowledgeGapInput = z.infer<typeof reopenKnowledgeGapInputSchema>;

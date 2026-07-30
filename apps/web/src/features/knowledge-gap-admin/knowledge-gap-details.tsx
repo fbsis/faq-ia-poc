@@ -3,6 +3,7 @@ import { Button } from "@faq/ui";
 import { History, MessageCircleQuestion, PenLine, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { GapAuditTimeline } from "./gap-audit-timeline.js";
+import { KnowledgeGapActions } from "./knowledge-gap-actions.js";
 import { StatusBadge } from "./knowledge-gap-list.js";
 
 export function KnowledgeGapDetails({
@@ -37,6 +38,7 @@ export function KnowledgeGapDetails({
           </Link>
         </Button>
       )}
+      <KnowledgeGapActions details={details} />
 
       <section className="mt-6">
         <h3 className="flex items-center gap-2 font-semibold text-slate-900">

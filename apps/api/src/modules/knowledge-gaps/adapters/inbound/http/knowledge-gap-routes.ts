@@ -1,10 +1,13 @@
 import {
+  dismissKnowledgeGapInputSchema,
   gapResolutionSchema,
   idempotencyKeySchema,
   knowledgeGapDetailsSchema,
   knowledgeGapIdParamsSchema,
   knowledgeGapListQuerySchema,
   knowledgeGapPageSchema,
+  knowledgeGapSchema,
+  reopenKnowledgeGapInputSchema,
   resolveKnowledgeGapInputSchema
 } from "@faq/contracts";
 import type { FastifyInstance } from "fastify";
@@ -14,7 +17,9 @@ import {
   SESSION_COOKIE
 } from "../../../../auth/adapters/inbound/http/auth-plugin.js";
 import type { GetKnowledgeGap } from "../../../application/get-knowledge-gap.js";
+import type { DismissKnowledgeGap } from "../../../application/dismiss-knowledge-gap.js";
 import type { ListKnowledgeGaps } from "../../../application/list-knowledge-gaps.js";
+import type { ReopenKnowledgeGap } from "../../../application/reopen-knowledge-gap.js";
 import type { ResolveKnowledgeGap } from "../../../application/resolve-knowledge-gap.js";
 
 export function registerKnowledgeGapRoutes(
@@ -24,6 +29,8 @@ export function registerKnowledgeGapRoutes(
     listKnowledgeGaps: ListKnowledgeGaps;
     getKnowledgeGap: GetKnowledgeGap;
     resolveKnowledgeGap: ResolveKnowledgeGap;
+    dismissKnowledgeGap: DismissKnowledgeGap;
+    reopenKnowledgeGap: ReopenKnowledgeGap;
   }
 ): void {
   const guards = createAuthGuards(dependencies.getSession);
@@ -62,6 +69,40 @@ export function registerKnowledgeGapRoutes(
         input: resolveKnowledgeGapInputSchema.parse(request.body)
       });
       return reply.status(202).send(gapResolutionSchema.parse(resolution));
+    }
+  );
+
+  app.post(
+    "/api/v1/knowledge-gaps/:knowledgeGapId/dismiss",
+    { preHandler: requireMutation },
+    async (request) => {
+      const { knowledgeGapId } = knowledgeGapIdParamsSchema.parse(request.params);
+      const session = await dependencies.getSession.execute(request.cookies[SESSION_COOKIE]);
+      return knowledgeGapSchema.parse(
+        await dependencies.dismissKnowledgeGap.execute({
+          knowledgeGapId,
+          adminId: session.admin.id,
+          idempotencyKey: idempotencyKeySchema.parse(request.headers["idempotency-key"]),
+          input: dismissKnowledgeGapInputSchema.parse(request.body)
+        })
+      );
+    }
+  );
+
+  app.post(
+    "/api/v1/knowledge-gaps/:knowledgeGapId/reopen",
+    { preHandler: requireMutation },
+    async (request) => {
+      const { knowledgeGapId } = knowledgeGapIdParamsSchema.parse(request.params);
+      const session = await dependencies.getSession.execute(request.cookies[SESSION_COOKIE]);
+      return knowledgeGapSchema.parse(
+        await dependencies.reopenKnowledgeGap.execute({
+          knowledgeGapId,
+          adminId: session.admin.id,
+          idempotencyKey: idempotencyKeySchema.parse(request.headers["idempotency-key"]),
+          input: reopenKnowledgeGapInputSchema.parse(request.body)
+        })
+      );
     }
   );
 }

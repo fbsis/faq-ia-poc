@@ -163,6 +163,8 @@ export const knowledgeGapEvents = pgTable("knowledge_gap_events", {
   reason: text(),
   faqId: uuid("faq_id"),
   resolutionId: uuid("resolution_id"),
+  idempotencyKey: text("idempotency_key"),
+  requestHash: text("request_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull()
 });
 

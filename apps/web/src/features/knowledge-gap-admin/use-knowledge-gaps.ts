@@ -1,6 +1,17 @@
-import type { KnowledgeGapListQuery, ResolveKnowledgeGapInput } from "@faq/contracts";
+import type {
+  DismissKnowledgeGapInput,
+  KnowledgeGapListQuery,
+  ReopenKnowledgeGapInput,
+  ResolveKnowledgeGapInput
+} from "@faq/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getKnowledgeGap, listKnowledgeGaps, resolveKnowledgeGap } from "./knowledge-gap-api.js";
+import {
+  dismissKnowledgeGap,
+  getKnowledgeGap,
+  listKnowledgeGaps,
+  reopenKnowledgeGap,
+  resolveKnowledgeGap
+} from "./knowledge-gap-api.js";
 
 export function useKnowledgeGaps(query: KnowledgeGapListQuery) {
   return useQuery({
@@ -34,6 +45,41 @@ export function useResolveKnowledgeGap() {
         client.invalidateQueries({ queryKey: ["knowledge-gaps"] }),
         client.invalidateQueries({ queryKey: ["knowledge-gap", variables.id] }),
         client.invalidateQueries({ queryKey: ["faqs"] })
+      ]);
+    }
+  });
+}
+
+export function useDismissKnowledgeGap() {
+  return useGapAction<DismissKnowledgeGapInput>((id, input, key) =>
+    dismissKnowledgeGap(id, input, key)
+  );
+}
+
+export function useReopenKnowledgeGap() {
+  return useGapAction<ReopenKnowledgeGapInput>((id, input, key) =>
+    reopenKnowledgeGap(id, input, key)
+  );
+}
+
+function useGapAction<TInput>(
+  action: (id: string, input: TInput, idempotencyKey: string) => Promise<unknown>
+) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+      idempotencyKey
+    }: {
+      id: string;
+      input: TInput;
+      idempotencyKey: string;
+    }) => action(id, input, idempotencyKey),
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["knowledge-gaps"] }),
+        client.invalidateQueries({ queryKey: ["knowledge-gap", variables.id] })
       ]);
     }
   });

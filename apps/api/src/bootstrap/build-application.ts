@@ -4,6 +4,7 @@ import rateLimit from "@fastify/rate-limit";
 import type {
   GapResolution,
   FaqListQuery,
+  KnowledgeGap,
   KnowledgeGapDetails,
   KnowledgeGapListQuery,
   KnowledgeGapPage
@@ -57,10 +58,14 @@ import { PostgresUnansweredRecorder } from "../modules/knowledge-gaps/adapters/o
 import { registerKnowledgeGapRoutes } from "../modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.js";
 import { PostgresKnowledgeGapRepository } from "../modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.js";
 import { GetKnowledgeGap } from "../modules/knowledge-gaps/application/get-knowledge-gap.js";
+import { DismissKnowledgeGap } from "../modules/knowledge-gaps/application/dismiss-knowledge-gap.js";
 import { ListKnowledgeGaps } from "../modules/knowledge-gaps/application/list-knowledge-gaps.js";
+import { ReopenKnowledgeGap } from "../modules/knowledge-gaps/application/reopen-knowledge-gap.js";
 import { ResolveKnowledgeGap } from "../modules/knowledge-gaps/application/resolve-knowledge-gap.js";
 import type {
+  DismissKnowledgeGapCommand,
   KnowledgeGapRepository,
+  ReopenKnowledgeGapCommand,
   ResolveKnowledgeGapCommand,
   UnansweredInteractionRecorder
 } from "../modules/knowledge-gaps/application/ports.js";
@@ -143,6 +148,16 @@ export async function buildApplication(
     randomIds,
     systemClock
   );
+  const dismissKnowledgeGap = new DismissKnowledgeGap(
+    resources.knowledgeGaps,
+    randomIds,
+    systemClock
+  );
+  const reopenKnowledgeGap = new ReopenKnowledgeGap(
+    resources.knowledgeGaps,
+    randomIds,
+    systemClock
+  );
   const faqUseCases = createFaqUseCases({
     categories: resources.faq,
     faqs: resources.faq,
@@ -158,7 +173,9 @@ export async function buildApplication(
     getSession,
     listKnowledgeGaps,
     getKnowledgeGap,
-    resolveKnowledgeGap
+    resolveKnowledgeGap,
+    dismissKnowledgeGap,
+    reopenKnowledgeGap
   });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
@@ -293,6 +310,45 @@ class MemoryKnowledgeGapRepository implements KnowledgeGapRepository {
       currentResolution: resolution
     };
     return Promise.resolve(resolution);
+  }
+
+  dismiss(command: DismissKnowledgeGapCommand): Promise<KnowledgeGap> {
+    return this.applyAction(command, "dismissed");
+  }
+
+  reopen(command: ReopenKnowledgeGapCommand): Promise<KnowledgeGap> {
+    return this.applyAction(command, "open");
+  }
+
+  private applyAction(
+    command: DismissKnowledgeGapCommand | ReopenKnowledgeGapCommand,
+    status: "dismissed" | "open"
+  ): Promise<KnowledgeGap> {
+    if (
+      !this.gap ||
+      this.gap.id !== command.knowledgeGapId ||
+      this.gap.version !== command.input.expectedVersion
+    ) {
+      return Promise.reject(new Error("Knowledge gap changed."));
+    }
+    this.gap = {
+      ...this.gap,
+      status,
+      version: this.gap.version + 1
+    };
+    return Promise.resolve({
+      id: this.gap.id,
+      representativeQuestion: this.gap.representativeQuestion,
+      status: this.gap.status,
+      occurrenceCount: this.gap.occurrenceCount,
+      firstOccurredAt: this.gap.firstOccurredAt,
+      lastOccurredAt: this.gap.lastOccurredAt,
+      ...(this.gap.suggestedCategory ? { suggestedCategory: this.gap.suggestedCategory } : {}),
+      ...(this.gap.resolvedFaqId ? { resolvedFaqId: this.gap.resolvedFaqId } : {}),
+      version: this.gap.version,
+      createdAt: this.gap.createdAt,
+      updatedAt: this.gap.updatedAt
+    });
   }
 }
 
