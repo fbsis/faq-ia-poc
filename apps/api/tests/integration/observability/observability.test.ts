@@ -41,20 +41,20 @@ describe("observability controls", () => {
   });
 
   it("redacts authentication, secrets, questions, and answers from structured logs", () => {
-    const logger = observabilityOptions().logger;
-    expect(logger).toMatchObject({
-      redact: {
-        censor: "[REDACTED]",
-        paths: expect.arrayContaining([
-          "req.headers.authorization",
-          "req.headers.cookie",
-          "req.body.password",
-          "req.body.question",
-          "req.body.answer",
-          "*.OPENAI_API_KEY",
-          "*.SESSION_SECRET"
-        ])
-      }
-    });
+    const logger = observabilityOptions().logger as {
+      redact: { censor: string; paths: string[] };
+    };
+    expect(logger.redact.censor).toBe("[REDACTED]");
+    for (const path of [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "req.body.password",
+      "req.body.question",
+      "req.body.answer",
+      "*.OPENAI_API_KEY",
+      "*.SESSION_SECRET"
+    ]) {
+      expect(logger.redact.paths).toContain(path);
+    }
   });
 });
