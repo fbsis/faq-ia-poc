@@ -16,9 +16,10 @@ describe("Docker database migrations", () => {
   });
 
   it("packages migrations and applies them before production API processes", async () => {
-    const [compose, dockerfile] = await Promise.all([
+    const [compose, dockerfile, dockerignore] = await Promise.all([
       readFile(resolve(repositoryRoot, "compose.production.yaml"), "utf8"),
-      readFile(resolve(repositoryRoot, "docker/api.Dockerfile"), "utf8")
+      readFile(resolve(repositoryRoot, "docker/api.Dockerfile"), "utf8"),
+      readFile(resolve(repositoryRoot, ".dockerignore"), "utf8")
     ]);
 
     expect(compose).toContain("migrate:");
@@ -34,5 +35,6 @@ describe("Docker database migrations", () => {
     expect(dockerfile).toContain(
       "RUN pnpm --filter @faq/contracts build && pnpm --filter @faq/api build"
     );
+    expect(dockerignore).toContain("**/*.tsbuildinfo");
   });
 });
