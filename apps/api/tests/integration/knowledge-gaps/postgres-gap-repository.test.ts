@@ -87,7 +87,7 @@ integration("PostgresKnowledgeGapRepository", () => {
 
   it("creates a pending FAQ atomically and resolves the gap only after embedding activation", async () => {
     const gap = (await repository.list({ page: 1, pageSize: 20, sort: "latest_desc" })).items[0]!;
-    const resolution = await repository.resolve({
+    const command = {
       knowledgeGapId: gap.id,
       adminId: "00000000-0000-4000-8000-000000000001",
       resolutionId: "00000000-0000-4000-8000-000000000301",
@@ -104,7 +104,8 @@ integration("PostgresKnowledgeGapRepository", () => {
         expectedVersion: gap.version
       },
       createdAt: new Date("2026-07-30T13:00:00.000Z")
-    });
+    };
+    const resolution = await repository.resolve(command);
 
     expect(resolution).toMatchObject({
       knowledgeGapId: gap.id,
@@ -125,6 +126,15 @@ integration("PostgresKnowledgeGapRepository", () => {
       contentVersion: 1,
       resolutionId: resolution.id
     });
+    await expect(
+      repository.resolve({
+        ...command,
+        resolutionId: "00000000-0000-4000-8000-000000000401",
+        faqId: "00000000-0000-4000-8000-000000000402",
+        eventId: "00000000-0000-4000-8000-000000000403",
+        outboxId: "00000000-0000-4000-8000-000000000404"
+      })
+    ).resolves.toEqual(resolution);
 
     await new PostgresFaqRepository(pool).activateEmbedding(
       resolution.faqId,
