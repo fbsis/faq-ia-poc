@@ -85,6 +85,27 @@ describe("FAQ administration", () => {
     expect(await screen.findByText(/processando embedding/i)).toBeVisible();
   });
 
+  it("replaces the pending status automatically when embedding finishes", async () => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v1/categories", () => HttpResponse.json([category])),
+      http.get("/api/v1/faqs", () => {
+        requests += 1;
+        return HttpResponse.json({
+          items: [{ ...faq, status: requests === 1 ? "embedding_pending" : "active" }],
+          page: 1,
+          pageSize: 20,
+          total: 1
+        });
+      })
+    );
+    renderPage();
+
+    expect(await screen.findByText(/processando embedding/i)).toBeVisible();
+    expect(await screen.findByText(/^ativa$/i, {}, { timeout: 2_500 })).toBeVisible();
+    expect(requests).toBeGreaterThan(1);
+  });
+
   it("soft-deactivates and offers restoration", async () => {
     let active = true;
     server.use(
