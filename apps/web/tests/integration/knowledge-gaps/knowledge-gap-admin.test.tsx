@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -69,9 +69,9 @@ describe("knowledge gap administration", () => {
     renderPage();
 
     expect(await screen.findByRole("heading", { name: /perguntas sem resposta/i })).toBeVisible();
-    expect(screen.getByText("2 ocorrências")).toBeVisible();
+    expect(await screen.findByText("2 ocorrências")).toBeVisible();
     await userEvent.selectOptions(screen.getByLabelText(/status/i), "open");
-    expect(requests.at(-1)?.searchParams.get("status")).toBe("open");
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("status")).toBe("open"));
 
     await userEvent.click(screen.getByRole("button", { name: /ver detalhes/i }));
     expect(await screen.findByText("Como consigo outra via?")).toBeVisible();
