@@ -48,6 +48,30 @@ export default tseslint.config(
     }
   },
   {
+    files: ["apps/api/src/modules/**/domain/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "fastify",
+                "pg",
+                "ioredis",
+                "openai",
+                "bullmq",
+                "drizzle-orm*",
+                "**/infrastructure/**"
+              ],
+              message: "Domain code must depend only on domain concepts."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     files: ["apps/web/**/*.{ts,tsx}", "packages/ui/**/*.{ts,tsx}"],
     languageOptions: {
       globals: globals.browser

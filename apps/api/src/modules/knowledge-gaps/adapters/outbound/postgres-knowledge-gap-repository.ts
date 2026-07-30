@@ -17,7 +17,12 @@ import type {
   ReopenKnowledgeGapCommand,
   ResolveKnowledgeGapCommand
 } from "../../application/ports.js";
-import { targetStatus, type GapAction } from "../../domain/knowledge-gap-event.js";
+import {
+  KnowledgeGapTransitionError,
+  targetStatus,
+  transitionKnowledgeGap,
+  type GapAction
+} from "../../domain/knowledge-gap-event.js";
 
 interface GapRow {
   id: string;
@@ -321,7 +326,7 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
           "The knowledge gap changed before this action was submitted."
         );
       }
-      const nextStatus = targetStatus(action, gap.rows[0].status);
+      const nextStatus = mapActionStatus(action, gap.rows[0].status);
       await client.query(
         `UPDATE knowledge_gaps
          SET status = $2, version = version + 1
@@ -557,6 +562,20 @@ function conflict(code: string, message: string): AppError {
   return new AppError(code, message, 409);
 }
 
+function mapActionStatus(
+  action: GapAction,
+  currentStatus: KnowledgeGap["status"]
+): KnowledgeGap["status"] {
+  try {
+    return targetStatus(action, currentStatus);
+  } catch (error) {
+    if (error instanceof KnowledgeGapTransitionError) {
+      throw conflict(error.code, error.message);
+    }
+    throw error;
+  }
+}
+
 function normalize(value: string): string {
   return value
     .normalize("NFD")
@@ -568,16 +587,12 @@ function normalize(value: string): string {
 }
 
 function eventTransition(type: KnowledgeGapEvent["type"]) {
-  switch (type) {
-    case "resolution_started":
-      return { fromStatus: "open" as const, toStatus: "resolving" as const };
-    case "resolved":
-      return { fromStatus: "resolving" as const, toStatus: "resolved" as const };
-    case "resolution_failed":
-      return { fromStatus: "resolving" as const, toStatus: "open" as const };
-    case "dismissed":
-      return { fromStatus: "open" as const, toStatus: "dismissed" as const };
-    case "reopened":
-      return { fromStatus: "dismissed" as const, toStatus: "open" as const };
-  }
+  const fromStatus = {
+    resolution_started: "open",
+    resolved: "resolving",
+    resolution_failed: "resolving",
+    dismissed: "open",
+    reopened: "dismissed"
+  }[type] as KnowledgeGap["status"];
+  return { fromStatus, toStatus: transitionKnowledgeGap(type, fromStatus) };
 }
