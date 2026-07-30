@@ -172,27 +172,27 @@ widget matches the source interactions and configured organization time zone.
 
 ### Tests for User Story 3
 
-- [ ] T077 [P] [US3] Add analytics summary and date-range contract tests in `packages/contracts/src/analytics.test.ts`
-- [ ] T078 [P] [US3] Add range validation, granularity, and time-zone use-case tests in `apps/api/tests/unit/analytics/get-analytics-summary.test.ts`
-- [ ] T079 [P] [US3] Add total, top-question, unanswered, and category projection tests in `apps/api/tests/integration/analytics/postgres-analytics.test.ts`
-- [ ] T080 [P] [US3] Add uncategorized, empty-period, historical-unanswered, backlog, and time-zone consistency tests in `apps/api/tests/integration/analytics/analytics-edge-cases.test.ts`
-- [ ] T081 [P] [US3] Add `GET /api/v1/analytics/summary` authorization and contract tests in `apps/api/tests/contract/analytics.routes.test.ts`
-- [ ] T082 [P] [US3] Add filter synchronization and chart transformation hook tests in `apps/web/tests/unit/dashboard/dashboard-hooks.test.tsx`
-- [ ] T083 [P] [US3] Add loading, empty, error, KPI, chart, and accessible-table tests in `apps/web/tests/integration/dashboard/dashboard-page.test.tsx`
+- [X] T077 [P] [US3] Add analytics summary and date-range contract tests in `packages/contracts/src/analytics.test.ts`
+- [X] T078 [P] [US3] Add range validation, granularity, and time-zone use-case tests in `apps/api/tests/unit/analytics/get-analytics-summary.test.ts`
+- [X] T079 [P] [US3] Add total, top-question, unanswered, and category projection tests in `apps/api/tests/integration/analytics/postgres-analytics.test.ts`
+- [X] T080 [P] [US3] Add uncategorized, empty-period, historical-unanswered, backlog, and time-zone consistency tests in `apps/api/tests/integration/analytics/analytics-edge-cases.test.ts`
+- [X] T081 [P] [US3] Add `GET /api/v1/analytics/summary` authorization and contract tests in `apps/api/tests/contract/analytics.routes.test.ts`
+- [X] T082 [P] [US3] Add filter synchronization and chart transformation hook tests in `apps/web/tests/unit/dashboard/dashboard-hooks.test.tsx`
+- [X] T083 [P] [US3] Add loading, empty, error, KPI, chart, and accessible-table tests in `apps/web/tests/integration/dashboard/dashboard-page.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T084 [P] [US3] Define analytics request and summary Zod contracts in `packages/contracts/src/analytics.ts`
-- [ ] T085 [P] [US3] Define analytics projection types and repository port in `apps/api/src/modules/analytics/application/ports.ts`
-- [ ] T086 [US3] Implement one-snapshot PostgreSQL projections for totals, rankings, gaps, categories, and timeline in `apps/api/src/modules/analytics/adapters/outbound/postgres-analytics-repository.ts`
-- [ ] T087 [US3] Implement validated range and organization-time-zone orchestration in `apps/api/src/modules/analytics/application/get-analytics-summary.ts`
-- [ ] T088 [US3] Expose the authorized analytics summary endpoint in `apps/api/src/modules/analytics/adapters/inbound/http/analytics-routes.ts`
-- [ ] T089 [P] [US3] Implement the typed analytics API and query hook in `apps/web/src/features/dashboard/analytics-api.ts` and `apps/web/src/features/dashboard/use-analytics.ts`
-- [ ] T090 [P] [US3] Implement URL-backed period filters in `apps/web/src/features/dashboard/use-analytics-filters.ts` and `apps/web/src/features/dashboard/analytics-filters.tsx`
-- [ ] T091 [P] [US3] Build KPI and backlog cards in `apps/web/src/features/dashboard/summary-cards.tsx`
-- [ ] T092 [P] [US3] Build Recharts time-series, category, and frequency visualizations with accessible tables in `apps/web/src/features/dashboard/analytics-charts.tsx`
-- [ ] T093 [US3] Assemble protected dashboard loading, empty, error, and success states in `apps/web/src/features/dashboard/dashboard-page.tsx` and `apps/web/src/app/router.tsx`
-- [ ] T094 [US3] Add fixed-period totals, filters, empty state, and historical-versus-backlog Playwright coverage in `tests/e2e/dashboard.spec.ts`
+- [X] T084 [P] [US3] Define analytics request and summary Zod contracts in `packages/contracts/src/analytics.ts`
+- [X] T085 [P] [US3] Define analytics projection types and repository port in `apps/api/src/modules/analytics/application/ports.ts`
+- [X] T086 [US3] Implement one-snapshot PostgreSQL projections for totals, rankings, gaps, categories, and timeline in `apps/api/src/modules/analytics/adapters/outbound/postgres-analytics-repository.ts`
+- [X] T087 [US3] Implement validated range and organization-time-zone orchestration in `apps/api/src/modules/analytics/application/get-analytics-summary.ts`
+- [X] T088 [US3] Expose the authorized analytics summary endpoint in `apps/api/src/modules/analytics/adapters/inbound/http/analytics-routes.ts`
+- [X] T089 [P] [US3] Implement the typed analytics API and query hook in `apps/web/src/features/dashboard/analytics-api.ts` and `apps/web/src/features/dashboard/use-analytics.ts`
+- [X] T090 [P] [US3] Implement URL-backed period filters in `apps/web/src/features/dashboard/use-analytics-filters.ts` and `apps/web/src/features/dashboard/analytics-filters.tsx`
+- [X] T091 [P] [US3] Build KPI and backlog cards in `apps/web/src/features/dashboard/summary-cards.tsx`
+- [X] T092 [P] [US3] Build Recharts time-series, category, and frequency visualizations with accessible tables in `apps/web/src/features/dashboard/analytics-charts.tsx`
+- [X] T093 [US3] Assemble protected dashboard loading, empty, error, and success states in `apps/web/src/features/dashboard/dashboard-page.tsx` and `apps/web/src/app/router.tsx`
+- [X] T094 [US3] Add fixed-period totals, filters, empty state, and historical-versus-backlog Playwright coverage in `tests/e2e/dashboard.spec.ts`
 
 **Checkpoint**: Analytics is reproducible from PostgreSQL interactions and remains distinct from
 the current administrative backlog.

@@ -17,6 +17,13 @@ import { registerAuthRoutes } from "../modules/auth/adapters/inbound/http/auth-r
 import { ScryptPasswordHasher } from "../modules/auth/adapters/outbound/password-hasher.js";
 import { PostgresAuthRepository } from "../modules/auth/adapters/outbound/postgres-auth-repository.js";
 import type { Admin, AdminSession } from "../modules/auth/domain/admin.js";
+import { registerAnalyticsRoutes } from "../modules/analytics/adapters/inbound/http/analytics-routes.js";
+import { PostgresAnalyticsRepository } from "../modules/analytics/adapters/outbound/postgres-analytics-repository.js";
+import { GetAnalyticsSummary } from "../modules/analytics/application/get-analytics-summary.js";
+import type {
+  AnalyticsMetrics,
+  AnalyticsRepository
+} from "../modules/analytics/application/ports.js";
 import { registerChatRoutes } from "../modules/chat/adapters/inbound/http/chat-routes.js";
 import { DeterministicEmbeddingProvider } from "../modules/chat/adapters/outbound/deterministic-embedding-provider.js";
 import { OpenAiEmbeddingProvider } from "../modules/chat/adapters/outbound/openai-embedding-provider.js";
@@ -102,9 +109,14 @@ export async function buildApplication(
     acceptanceThreshold: environment.FAQ_ACCEPTANCE_THRESHOLD,
     ambiguityThreshold: environment.FAQ_AMBIGUITY_THRESHOLD
   });
+  const getAnalyticsSummary = new GetAnalyticsSummary(
+    resources.analytics,
+    environment.ORGANIZATION_TIME_ZONE
+  );
 
   registerAuthRoutes(app, { environment, login, getSession, logout });
   registerChatRoutes(app, askQuestion);
+  registerAnalyticsRoutes(app, { getSession, getAnalyticsSummary });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
   app.addHook("onClose", async () => {
@@ -121,6 +133,7 @@ export async function buildApplication(
 interface Resources {
   auth: AdminRepository & SessionRepository;
   passwords: ScryptPasswordHasher;
+  analytics: AnalyticsRepository;
   chat: {
     search: FaqSearch;
     cache: AnswerCache;
@@ -149,6 +162,7 @@ function createRuntimeResources(environment: Environment): Resources {
   return {
     auth: new PostgresAuthRepository(pool),
     passwords: new ScryptPasswordHasher(),
+    analytics: new PostgresAnalyticsRepository(pool),
     chat: {
       search: new PostgresFaqSearch(pool),
       cache: new RedisAnswerCache(cache),
@@ -179,6 +193,7 @@ async function createTestResources(
   return {
     auth: new MemoryAuthRepository(admin),
     passwords,
+    analytics: new MemoryAnalyticsRepository(),
     chat: {
       search: new MemoryFaqSearch(),
       cache: new MemoryAnswerCache(),
@@ -189,6 +204,26 @@ async function createTestResources(
       knowledgeVersion: { current: () => Promise.resolve(1) }
     }
   };
+}
+
+class MemoryAnalyticsRepository implements AnalyticsRepository {
+  getSummary(): Promise<AnalyticsMetrics> {
+    return Promise.resolve({
+      totalQueries: 0,
+      answeredQueries: 0,
+      unansweredQueries: 0,
+      knowledgeGapBacklog: {
+        open: 0,
+        resolving: 0,
+        resolved: 0,
+        dismissed: 0
+      },
+      topQuestions: [],
+      unansweredQuestions: [],
+      categoryDistribution: [],
+      timeline: []
+    });
+  }
 }
 
 const deterministicConversationAgent: ConversationAgent = {

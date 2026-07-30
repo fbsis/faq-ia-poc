@@ -954,7 +954,7 @@ components:
       properties:
         range:
           type: object
-          required: [from, to, timeZone]
+          required: [from, to, timeZone, granularity]
           properties:
             from:
               type: string
@@ -964,6 +964,9 @@ components:
               format: date
             timeZone:
               type: string
+            granularity:
+              type: string
+              enum: [day, month]
         totalQueries:
           type: integer
           minimum: 0
@@ -1013,6 +1016,7 @@ components:
               categoryId:
                 type: string
                 format: uuid
+                nullable: true
               categoryName:
                 type: string
               count:
