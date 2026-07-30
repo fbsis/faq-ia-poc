@@ -27,23 +27,23 @@ export const faqStatusSchema = z.enum([
   "inactive"
 ]);
 
-export const faqInputSchema = z
-  .object({
-    categoryId: identifierSchema,
-    question: trimmed(3, 500),
-    aliases: z.array(trimmed(3, 500)).max(20).default([]),
-    answer: trimmed(1, 10_000)
-  })
-  .superRefine(({ aliases }, context) => {
-    const normalized = aliases.map((alias) => alias.toLocaleLowerCase("pt-BR"));
-    if (new Set(normalized).size !== aliases.length) {
-      context.addIssue({
-        code: "custom",
-        path: ["aliases"],
-        message: "FAQ aliases must be unique."
-      });
-    }
-  });
+export const faqInputObjectSchema = z.object({
+  categoryId: identifierSchema,
+  question: trimmed(3, 500),
+  aliases: z.array(trimmed(3, 500)).max(20).default([]),
+  answer: trimmed(1, 10_000)
+});
+
+export const faqInputSchema = faqInputObjectSchema.superRefine(({ aliases }, context) => {
+  const normalized = aliases.map((alias) => alias.toLocaleLowerCase("pt-BR"));
+  if (new Set(normalized).size !== aliases.length) {
+    context.addIssue({
+      code: "custom",
+      path: ["aliases"],
+      message: "FAQ aliases must be unique."
+    });
+  }
+});
 
 export const faqSchema = z.object({
   id: identifierSchema,

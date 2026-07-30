@@ -22,6 +22,14 @@ export const router = createBrowserRouter([
           const { FaqAdminPage } = await import("../features/faq-admin/faq-admin-page.js");
           return { Component: FaqAdminPage };
         }
+      },
+      {
+        path: "/admin/knowledge-gaps",
+        lazy: async () => {
+          const { KnowledgeGapAdminPage } =
+            await import("../features/knowledge-gap-admin/knowledge-gap-admin-page.js");
+          return { Component: KnowledgeGapAdminPage };
+        }
       }
     ]
   }

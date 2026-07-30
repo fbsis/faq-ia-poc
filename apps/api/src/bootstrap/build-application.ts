@@ -1,7 +1,12 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import type { FaqListQuery } from "@faq/contracts";
+import type {
+  FaqListQuery,
+  KnowledgeGapDetails,
+  KnowledgeGapListQuery,
+  KnowledgeGapPage
+} from "@faq/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Redis } from "ioredis";
 import type { DatabasePool } from "../infrastructure/database/client.js";
@@ -48,7 +53,14 @@ import type {
 import type { FaqCandidate } from "../modules/chat/domain/faq-candidate.js";
 import type { Interaction } from "../modules/chat/domain/interaction.js";
 import { PostgresUnansweredRecorder } from "../modules/knowledge-gaps/adapters/outbound/postgres-unanswered-recorder.js";
-import type { UnansweredInteractionRecorder } from "../modules/knowledge-gaps/application/ports.js";
+import { registerKnowledgeGapRoutes } from "../modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.js";
+import { PostgresKnowledgeGapRepository } from "../modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.js";
+import { GetKnowledgeGap } from "../modules/knowledge-gaps/application/get-knowledge-gap.js";
+import { ListKnowledgeGaps } from "../modules/knowledge-gaps/application/list-knowledge-gaps.js";
+import type {
+  KnowledgeGapRepository,
+  UnansweredInteractionRecorder
+} from "../modules/knowledge-gaps/application/ports.js";
 import { registerFaqRoutes } from "../modules/faq/adapters/inbound/http/faq-routes.js";
 import { PostgresFaqRepository } from "../modules/faq/adapters/outbound/postgres-faq-repository.js";
 import { createFaqUseCases } from "../modules/faq/application/faq-use-cases.js";
@@ -120,6 +132,8 @@ export async function buildApplication(
     resources.analytics,
     environment.ORGANIZATION_TIME_ZONE
   );
+  const listKnowledgeGaps = new ListKnowledgeGaps(resources.knowledgeGaps);
+  const getKnowledgeGap = new GetKnowledgeGap(resources.knowledgeGaps);
   const faqUseCases = createFaqUseCases({
     categories: resources.faq,
     faqs: resources.faq,
@@ -131,6 +145,7 @@ export async function buildApplication(
   registerChatRoutes(app, askQuestion);
   registerAnalyticsRoutes(app, { getSession, getAnalyticsSummary });
   registerFaqRoutes(app, { getSession, useCases: faqUseCases });
+  registerKnowledgeGapRoutes(app, { getSession, listKnowledgeGaps, getKnowledgeGap });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
   app.addHook("onClose", async () => {
@@ -148,6 +163,7 @@ interface Resources {
   auth: AdminRepository & SessionRepository;
   passwords: ScryptPasswordHasher;
   analytics: AnalyticsRepository;
+  knowledgeGaps: KnowledgeGapRepository;
   faq: CategoryRepository & FaqRepository;
   chat: {
     search: FaqSearch;
@@ -178,6 +194,7 @@ function createRuntimeResources(environment: Environment): Resources {
     auth: new PostgresAuthRepository(pool),
     passwords: new ScryptPasswordHasher(),
     analytics: new PostgresAnalyticsRepository(pool),
+    knowledgeGaps: new PostgresKnowledgeGapRepository(pool),
     faq: new PostgresFaqRepository(pool),
     chat: {
       search: new PostgresFaqSearch(pool),
@@ -210,6 +227,7 @@ async function createTestResources(
     auth: new MemoryAuthRepository(admin),
     passwords,
     analytics: new MemoryAnalyticsRepository(),
+    knowledgeGaps: new MemoryKnowledgeGapRepository(),
     faq: new MemoryFaqRepository(),
     chat: {
       search: new MemoryFaqSearch(),
@@ -221,6 +239,21 @@ async function createTestResources(
       knowledgeVersion: { current: () => Promise.resolve(1) }
     }
   };
+}
+
+class MemoryKnowledgeGapRepository implements KnowledgeGapRepository {
+  list(query: KnowledgeGapListQuery): Promise<KnowledgeGapPage> {
+    return Promise.resolve({
+      items: [],
+      page: query.page,
+      pageSize: query.pageSize,
+      total: 0
+    });
+  }
+
+  get(): Promise<KnowledgeGapDetails | null> {
+    return Promise.resolve(null);
+  }
 }
 
 class MemoryFaqRepository implements CategoryRepository, FaqRepository {

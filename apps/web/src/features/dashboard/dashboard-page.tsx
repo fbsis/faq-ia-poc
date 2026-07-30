@@ -24,12 +24,20 @@ export function DashboardPage() {
               <p className="text-xs text-slate-400">Painel administrativo</p>
             </div>
           </div>
-          <Link
-            className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
-            to="/admin/faqs"
-          >
-            Administrar perguntas
-          </Link>
+          <nav className="flex gap-2">
+            <Link
+              className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
+              to="/admin/knowledge-gaps"
+            >
+              Perguntas sem resposta
+            </Link>
+            <Link
+              className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
+              to="/admin/faqs"
+            >
+              Administrar perguntas
+            </Link>
+          </nav>
         </div>
       </header>
 
