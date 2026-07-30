@@ -6,6 +6,7 @@ import {
 } from "../../../src/infrastructure/database/client.js";
 import { runMigrations } from "../../../src/infrastructure/database/migrate.js";
 import { createQueueRedis } from "../../../src/infrastructure/redis/connections.js";
+import { parsePrepareFaqEmbeddingJob } from "../../../src/infrastructure/queue/job-contracts.js";
 import { processFaqEmbedding } from "../../../src/infrastructure/queue/process-faq-embedding.js";
 import { PostgresFaqRepository } from "../../../src/modules/faq/adapters/outbound/postgres-faq-repository.js";
 import { PostgresKnowledgeGapRepository } from "../../../src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.js";
@@ -206,7 +207,7 @@ integration("knowledge-gap resolution worker", () => {
       : Promise.resolve();
     const worker = new Worker(
       name,
-      (job) => processFaqEmbedding(job.data, faqs, embeddings),
+      (job) => processFaqEmbedding(parsePrepareFaqEmbeddingJob(job.data), faqs, embeddings),
       { connection: workerConnection, prefix }
     );
     if (onExhausted) {

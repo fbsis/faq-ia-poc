@@ -213,4 +213,61 @@ describe("knowledge gap administration", () => {
     ).toBeVisible();
     expect(screen.getAllByText(gap.representativeQuestion)).toHaveLength(2);
   });
+
+  it("shows pending resolution progress and actionable dismiss and reopen conflicts", async () => {
+    const pendingResolution = {
+      id: "00000000-0000-4000-8000-000000000301",
+      knowledgeGapId: gap.id,
+      mode: "create",
+      faqId: "00000000-0000-4000-8000-000000000302",
+      faqStatus: "embedding_pending",
+      status: "pending",
+      createdAt: "2026-07-30T12:00:00.000Z"
+    };
+    let currentGap: typeof gap & {
+      currentResolution?: typeof pendingResolution;
+      occurrences: never[];
+      events: never[];
+    } = {
+      ...gap,
+      status: "resolving",
+      version: 3,
+      currentResolution: pendingResolution,
+      occurrences: [],
+      events: []
+    };
+    server.use(
+      http.get("/api/v1/knowledge-gaps", () =>
+        HttpResponse.json({ items: [currentGap], page: 1, pageSize: 20, total: 1 })
+      ),
+      http.get(`/api/v1/knowledge-gaps/${gap.id}`, () => HttpResponse.json(currentGap)),
+      http.post(`/api/v1/knowledge-gaps/${gap.id}/reopen`, () =>
+        HttpResponse.json(
+          {
+            code: "KNOWLEDGE_GAP_VERSION_CONFLICT",
+            message: "The knowledge gap changed.",
+            requestId: "request-2"
+          },
+          { status: 409 }
+        )
+      )
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /ver detalhes/i }));
+    expect(await screen.findByText(/resposta em processamento/i)).toBeVisible();
+
+    currentGap = {
+      ...currentGap,
+      status: "dismissed",
+      version: 4,
+      currentResolution: undefined
+    };
+    await userEvent.click(
+      await screen.findByRole("button", { name: /reabrir pendência/i })
+    );
+    expect(
+      await screen.findByText(/a pendência mudou.*recarregue os dados/i)
+    ).toBeVisible();
+  });
 });
