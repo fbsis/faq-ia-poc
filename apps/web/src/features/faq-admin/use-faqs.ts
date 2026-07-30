@@ -15,7 +15,12 @@ const faqKey = ["faqs"] as const;
 export function useFaqAdministration() {
   const client = useQueryClient();
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories });
-  const faqs = useQuery({ queryKey: faqKey, queryFn: () => listFaqs() });
+  const faqs = useQuery({
+    queryKey: faqKey,
+    queryFn: () => listFaqs(),
+    refetchInterval: (query) =>
+      query.state.data?.items.some((faq) => faq.status === "embedding_pending") ? 1_000 : false
+  });
   const storeFaq = (faq: Faq) => {
     client.setQueryData<FaqPage>(faqKey, (current) => {
       if (!current) return { items: [faq], page: 1, pageSize: 20, total: 1 };
