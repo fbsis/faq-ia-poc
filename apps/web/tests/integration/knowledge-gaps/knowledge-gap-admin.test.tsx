@@ -18,7 +18,9 @@ const gap = {
   createdAt: "2026-07-29T12:00:00.000Z",
   updatedAt: "2026-07-30T12:00:00.000Z"
 };
-const server = setupServer();
+const server = setupServer(
+  http.get("/api/v1/categories", () => HttpResponse.json([]))
+);
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
@@ -91,6 +93,47 @@ describe("knowledge gap administration", () => {
     renderPage();
 
     expect(await screen.findByText(/nenhuma pergunta sem resposta/i)).toBeVisible();
+  });
+
+  it("synchronizes category, date, frequency, and page controls with the inbox query", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v1/categories", () =>
+        HttpResponse.json([
+          {
+            id: "00000000-0000-4000-8000-000000000010",
+            name: "Financeiro",
+            slug: "financeiro",
+            isActive: true,
+            createdAt: "2026-07-30T12:00:00.000Z",
+            updatedAt: "2026-07-30T12:00:00.000Z"
+          }
+        ])
+      ),
+      http.get("/api/v1/knowledge-gaps", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json({ items: [gap], page: 1, pageSize: 20, total: 25 });
+      })
+    );
+    renderPage();
+
+    await screen.findByText("2 ocorrências");
+    await userEvent.selectOptions(screen.getByLabelText(/categoria/i), [
+      "00000000-0000-4000-8000-000000000010"
+    ]);
+    await userEvent.type(screen.getByLabelText(/data inicial/i), "2026-07-01");
+    await userEvent.type(screen.getByLabelText(/data final/i), "2026-07-31");
+    await userEvent.clear(screen.getByLabelText(/frequência mínima/i));
+    await userEvent.type(screen.getByLabelText(/frequência mínima/i), "2");
+    await userEvent.click(screen.getByRole("button", { name: /próxima página/i }));
+
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("page")).toBe("2"));
+    const query = requests.at(-1)!.searchParams;
+    expect(query.get("categoryId")).toBe("00000000-0000-4000-8000-000000000010");
+    expect(query.get("from")).toBe("2026-07-01");
+    expect(query.get("to")).toBe("2026-07-31");
+    expect(query.get("minFrequency")).toBe("2");
+    expect(query.get("page")).toBe("2");
   });
 
   it("dismisses an open gap with a reason and then offers reopening", async () => {

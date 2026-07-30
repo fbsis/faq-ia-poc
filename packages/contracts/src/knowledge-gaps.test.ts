@@ -35,9 +35,16 @@ describe("knowledge gap contracts", () => {
         status: "open",
         from: "2026-07-01",
         to: "2026-07-31",
+        minFrequency: "3",
         sort: "latest_desc"
       })
-    ).toMatchObject({ page: 2, pageSize: 10, status: "open", sort: "latest_desc" });
+    ).toMatchObject({
+      page: 2,
+      pageSize: 10,
+      status: "open",
+      minFrequency: 3,
+      sort: "latest_desc"
+    });
   });
 
   it("rejects incomplete and reversed inbox date ranges", () => {
