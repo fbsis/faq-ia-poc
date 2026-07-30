@@ -53,7 +53,7 @@ function createUseCase(options?: {
         : Promise.resolve([0.1])
   };
   const conversation: ConversationAgent = {
-    rewriteQuestion: (question) => Promise.resolve(question),
+    routeMessage: (question) => Promise.resolve({ intent: "faq", searchQuestion: question }),
     createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer),
     createUnansweredResponse: () =>
       options?.failClarification

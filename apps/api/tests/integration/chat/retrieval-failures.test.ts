@@ -42,7 +42,7 @@ integration("chat retrieval failures", () => {
       findFullText: () => Promise.resolve([])
     };
     const unavailableConversation: ConversationAgent = {
-      rewriteQuestion: () => Promise.reject(new Error("provider unavailable")),
+      routeMessage: () => Promise.reject(new Error("provider unavailable")),
       createGroundedResponse: () => Promise.reject(new Error("provider unavailable")),
       createUnansweredResponse: () => Promise.reject(new Error("provider unavailable"))
     };
