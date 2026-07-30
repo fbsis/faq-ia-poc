@@ -12,7 +12,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: ["./tsconfig.eslint.json"],
         tsconfigRootDir: import.meta.dirname
       }
     },
@@ -47,6 +47,12 @@ export default tseslint.config(
     },
     plugins: { "react-hooks": reactHooks },
     rules: reactHooks.configs.recommended.rules
+  },
+  {
+    files: ["**/tests/**/*.ts", "**/tests/**/*.tsx", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "@typescript-eslint/require-await": "off"
+    }
   },
   {
     files: ["**/*.config.{js,ts}", "apps/api/**/*.ts"],

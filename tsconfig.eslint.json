@@ -1,0 +1,9 @@
+{
+  "extends": "./packages/config/tsconfig/react.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "composite": false,
+    "noEmit": true
+  },
+  "include": ["apps/**/*", "packages/**/*", "*.js", "*.ts"]
+}
