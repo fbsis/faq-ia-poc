@@ -1,0 +1,1024 @@
+openapi: 3.1.0
+info:
+  title: FAQ Chatbot API
+  version: 1.0.0
+  description: Contract for public FAQ chat and authenticated administration.
+servers:
+  - url: /api/v1
+tags:
+  - name: Chat
+  - name: Auth
+  - name: FAQs
+  - name: Categories
+  - name: Knowledge Gaps
+  - name: Analytics
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /chat/questions:
+    post:
+      tags: [Chat]
+      operationId: askQuestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AskQuestionRequest"
+      responses:
+        "200":
+          description: The question was processed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AskQuestionResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+      responses:
+        "204":
+          description: Authenticated; a secure session cookie is set.
+          headers:
+            X-CSRF-Token:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /auth/session:
+    get:
+      tags: [Auth]
+      operationId: getSession
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current administrator session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      responses:
+        "204":
+          description: Session invalidated.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /categories:
+    get:
+      tags: [Categories]
+      operationId: listCategories
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Categories]
+      operationId: createCategory
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Category created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /faqs:
+    get:
+      tags: [FAQs]
+      operationId: listFaqs
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/FaqStatus"
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Paginated FAQ entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaqPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [FAQs]
+      operationId: createFaq
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqInput"
+      responses:
+        "202":
+          description: FAQ accepted for embedding preparation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /faqs/{faqId}:
+    parameters:
+      - $ref: "#/components/parameters/FaqId"
+    get:
+      tags: [FAQs]
+      operationId: getFaq
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: FAQ entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [FAQs]
+      operationId: updateFaq
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqInput"
+      responses:
+        "202":
+          description: FAQ updated and accepted for re-embedding when necessary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /faqs/{faqId}/status:
+    patch:
+      tags: [FAQs]
+      operationId: changeFaqStatus
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/FaqId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active:
+                  type: boolean
+      responses:
+        "202":
+          description: Status change accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "409":
+          description: FAQ cannot be activated until its embedding is ready.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /knowledge-gaps:
+    get:
+      tags: [Knowledge Gaps]
+      operationId: listKnowledgeGaps
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/KnowledgeGapStatus"
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [occurrences_desc, latest_desc, oldest_asc]
+            default: occurrences_desc
+      responses:
+        "200":
+          description: Paginated administrative knowledge-gap inbox.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeGapPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /knowledge-gaps/{knowledgeGapId}:
+    get:
+      tags: [Knowledge Gaps]
+      operationId: getKnowledgeGap
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/KnowledgeGapId"
+      responses:
+        "200":
+          description: Gap details, sampled occurrences, resolution, and audit history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeGapDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /knowledge-gaps/{knowledgeGapId}/resolutions:
+    post:
+      tags: [Knowledge Gaps]
+      operationId: resolveKnowledgeGap
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/KnowledgeGapId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveKnowledgeGapRequest"
+      responses:
+        "202":
+          description: Resolution and embedding preparation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GapResolution"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Stale version, existing transition, or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /knowledge-gaps/{knowledgeGapId}/dismiss:
+    post:
+      tags: [Knowledge Gaps]
+      operationId: dismissKnowledgeGap
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/KnowledgeGapId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason, expectedVersion]
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                expectedVersion:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Gap dismissed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeGap"
+        "409":
+          description: Stale version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /knowledge-gaps/{knowledgeGapId}/reopen:
+    post:
+      tags: [Knowledge Gaps]
+      operationId: reopenKnowledgeGap
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/KnowledgeGapId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expectedVersion]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                expectedVersion:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Gap reopened.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeGap"
+        "409":
+          description: Stale version or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /faqs/{faqId}/embedding-retries:
+    post:
+      tags: [FAQs]
+      operationId: retryFaqEmbedding
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/FaqId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202":
+          description: A retry was scheduled for the current FAQ content version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "409":
+          description: FAQ is not eligible for retry or a job already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /analytics/summary:
+    get:
+      tags: [Analytics]
+      operationId: getAnalyticsSummary
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: Consistent analytics for the requested interval.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: faq_session
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+  parameters:
+    FaqId:
+      name: faqId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    KnowledgeGapId:
+      name: knowledgeGapId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 100
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    From:
+      name: from
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+    To:
+      name: to
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+  responses:
+    ValidationError:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Authentication is required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooManyRequests:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ServiceUnavailable:
+      description: The question could not be processed reliably.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Error:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        requestId:
+          type: string
+    AskQuestionRequest:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 500
+        categoryId:
+          type: string
+          format: uuid
+    AskQuestionResponse:
+      type: object
+      required: [interactionId, status, message]
+      properties:
+        interactionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [answered, ambiguous, unanswered]
+        message:
+          type: string
+        answer:
+          type: string
+        matchedQuestion:
+          type: string
+        category:
+          $ref: "#/components/schemas/CategorySummary"
+        suggestions:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+    CategoryInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        isActive:
+          type: boolean
+          default: true
+    CategorySummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    Category:
+      allOf:
+        - $ref: "#/components/schemas/CategorySummary"
+        - type: object
+          required: [slug, isActive, createdAt, updatedAt]
+          properties:
+            slug:
+              type: string
+            isActive:
+              type: boolean
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    FaqStatus:
+      type: string
+      enum: [draft, embedding_pending, active, embedding_failed, inactive]
+    FaqInput:
+      type: object
+      additionalProperties: false
+      required: [categoryId, question, answer]
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        question:
+          type: string
+          minLength: 3
+          maxLength: 500
+        aliases:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 3
+            maxLength: 500
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 10000
+    Faq:
+      type: object
+      required: [id, category, question, aliases, answer, status, contentVersion, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          $ref: "#/components/schemas/CategorySummary"
+        question:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+        status:
+          $ref: "#/components/schemas/FaqStatus"
+        contentVersion:
+          type: integer
+          minimum: 1
+        embeddingError:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    FaqPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Faq"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+    AdminSession:
+      type: object
+      required: [admin, expiresAt, csrfToken]
+      properties:
+        admin:
+          type: object
+          required: [id, email, role]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              const: admin
+        expiresAt:
+          type: string
+          format: date-time
+        csrfToken:
+          type: string
+    KnowledgeGapStatus:
+      type: string
+      enum: [open, resolving, resolved, dismissed]
+    KnowledgeGap:
+      type: object
+      required: [id, representativeQuestion, status, occurrenceCount, firstOccurredAt, lastOccurredAt, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        representativeQuestion:
+          type: string
+        status:
+          $ref: "#/components/schemas/KnowledgeGapStatus"
+        occurrenceCount:
+          type: integer
+          minimum: 1
+        firstOccurredAt:
+          type: string
+          format: date-time
+        lastOccurredAt:
+          type: string
+          format: date-time
+        suggestedCategory:
+          $ref: "#/components/schemas/CategorySummary"
+        resolvedFaqId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    KnowledgeGapPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/KnowledgeGap"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    KnowledgeGapDetails:
+      allOf:
+        - $ref: "#/components/schemas/KnowledgeGap"
+        - type: object
+          required: [occurrences, events]
+          properties:
+            occurrences:
+              type: array
+              items:
+                type: object
+                required: [interactionId, question, occurredAt]
+                properties:
+                  interactionId:
+                    type: string
+                    format: uuid
+                  question:
+                    type: string
+                  occurredAt:
+                    type: string
+                    format: date-time
+            currentResolution:
+              $ref: "#/components/schemas/GapResolution"
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/KnowledgeGapEvent"
+    ResolveKnowledgeGapRequest:
+      type: object
+      additionalProperties: false
+      required: [mode, categoryId, question, answer, expectedVersion]
+      properties:
+        mode:
+          type: string
+          enum: [create, update]
+        faqId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        question:
+          type: string
+          minLength: 3
+          maxLength: 500
+        aliases:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 3
+            maxLength: 500
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        expectedVersion:
+          type: integer
+          minimum: 1
+      allOf:
+        - if:
+            properties:
+              mode:
+                const: update
+          then:
+            required: [faqId]
+    GapResolution:
+      type: object
+      required: [id, knowledgeGapId, mode, faqId, faqStatus, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        knowledgeGapId:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [create, update]
+        faqId:
+          type: string
+          format: uuid
+        faqStatus:
+          $ref: "#/components/schemas/FaqStatus"
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        errorCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+    KnowledgeGapEvent:
+      type: object
+      required: [id, type, fromStatus, toStatus, adminId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [resolution_started, resolved, resolution_failed, dismissed, reopened]
+        fromStatus:
+          $ref: "#/components/schemas/KnowledgeGapStatus"
+        toStatus:
+          $ref: "#/components/schemas/KnowledgeGapStatus"
+        adminId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        faqId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    AnalyticsSummary:
+      type: object
+      required: [range, totalQueries, answeredQueries, unansweredQueries, knowledgeGapBacklog, topQuestions, unansweredQuestions, categoryDistribution, timeline]
+      properties:
+        range:
+          type: object
+          required: [from, to, timeZone]
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+            timeZone:
+              type: string
+        totalQueries:
+          type: integer
+          minimum: 0
+        answeredQueries:
+          type: integer
+          minimum: 0
+        unansweredQueries:
+          type: integer
+          minimum: 0
+        knowledgeGapBacklog:
+          type: object
+          required: [open, resolving, resolved, dismissed]
+          properties:
+            open:
+              type: integer
+              minimum: 0
+            resolving:
+              type: integer
+              minimum: 0
+            resolved:
+              type: integer
+              minimum: 0
+            dismissed:
+              type: integer
+              minimum: 0
+        topQuestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionMetric"
+        unansweredQuestions:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/QuestionMetric"
+              - type: object
+                required: [lastOccurredAt]
+                properties:
+                  lastOccurredAt:
+                    type: string
+                    format: date-time
+        categoryDistribution:
+          type: array
+          items:
+            type: object
+            required: [categoryName, count]
+            properties:
+              categoryId:
+                type: string
+                format: uuid
+              categoryName:
+                type: string
+              count:
+                type: integer
+                minimum: 0
+        timeline:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date:
+                type: string
+                format: date
+              count:
+                type: integer
+                minimum: 0
+    QuestionMetric:
+      type: object
+      required: [question, count]
+      properties:
+        question:
+          type: string
+        count:
+          type: integer
+          minimum: 0
