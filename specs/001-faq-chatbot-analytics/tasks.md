@@ -257,7 +257,7 @@ retry, concurrent requests, dismissal, and reopening preserve one auditable resu
 - [x] T119 [P] [US5] Add knowledge-gap page, detail, resolution, event, dismiss, and reopen contract tests in `packages/contracts/src/knowledge-gaps.test.ts`
 - [ ] T120 [P] [US5] Add open, resolving, resolved, failed, dismissed, reopened, and recurrence state tests in `apps/api/tests/unit/knowledge-gaps/knowledge-gap.test.ts`
 - [ ] T121 [P] [US5] Add resolution idempotency, request-hash, optimistic-version, and duplicate-prevention tests in `apps/api/tests/unit/knowledge-gaps/resolve-knowledge-gap.test.ts`
-- [ ] T122 [P] [US5] Add dismiss, reopen, and audit-event use-case tests in `apps/api/tests/unit/knowledge-gaps/gap-actions.test.ts`
+- [x] T122 [P] [US5] Add dismiss, reopen, and audit-event use-case tests in `apps/api/tests/unit/knowledge-gaps/gap-actions.test.ts`
 - [x] T123 [P] [US5] Add filtered inbox, derived counts, occurrence detail, and append-only audit integration tests in `apps/api/tests/integration/knowledge-gaps/postgres-gap-repository.test.ts`
 - [ ] T124 [P] [US5] Add concurrent resolution, atomic outbox, retry-key, and rollback integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-concurrency.test.ts`
 - [ ] T125 [P] [US5] Add worker completion, exhausted failure, recurrence, and stale-result integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-worker.test.ts`
@@ -273,7 +273,7 @@ retry, concurrent requests, dismissal, and reopening preserve one auditable resu
 - [ ] T132 [US5] Implement filtered gap queries, derived occurrences, audit history, and row-locking commands in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`
 - [x] T133 [P] [US5] Implement list and detail use cases in `apps/api/src/modules/knowledge-gaps/application/list-knowledge-gaps.ts` and `apps/api/src/modules/knowledge-gaps/application/get-knowledge-gap.ts`
 - [x] T134 [US5] Implement idempotent create-or-update resolution and transactional outbox creation in `apps/api/src/modules/knowledge-gaps/application/resolve-knowledge-gap.ts`
-- [ ] T135 [P] [US5] Implement audited dismiss and reopen transitions in `apps/api/src/modules/knowledge-gaps/application/dismiss-knowledge-gap.ts` and `apps/api/src/modules/knowledge-gaps/application/reopen-knowledge-gap.ts`
+- [x] T135 [P] [US5] Implement audited dismiss and reopen transitions in `apps/api/src/modules/knowledge-gaps/application/dismiss-knowledge-gap.ts` and `apps/api/src/modules/knowledge-gaps/application/reopen-knowledge-gap.ts`
 - [ ] T136 [P] [US5] Implement audited embedding retry eligibility in `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`
 - [x] T137 [US5] Complete gap resolution or safely return it to open from the embedding worker in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
 - [ ] T138 [US5] Expose authorized list, detail, resolve, dismiss, reopen, and retry endpoints in `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`
