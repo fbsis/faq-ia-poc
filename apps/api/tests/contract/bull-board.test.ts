@@ -4,10 +4,23 @@ import {
   createBullBoardPolicy,
   redactQueuePayload
 } from "../../src/infrastructure/queue/bull-board.js";
+import { loadEnvironment } from "../../src/infrastructure/config/environment.js";
 
 describe("Bull Board operations dashboard", () => {
-  it("denies anonymous access and allows an authenticated administrator", async () => {
+  it("allows anonymous access outside production", async () => {
     const app = await buildApplication({ mode: "test" });
+    const anonymous = await app.inject({ method: "GET", url: "/admin/queues" });
+
+    expect(anonymous.statusCode).toBe(200);
+    expect(anonymous.body).toContain("Operações das filas");
+    await app.close();
+  });
+
+  it("requires an authenticated administrator in production", async () => {
+    const app = await buildApplication({
+      mode: "test",
+      environment: productionEnvironment()
+    });
     const anonymous = await app.inject({ method: "GET", url: "/admin/queues" });
     const auth = await login(app);
     const authorized = await app.inject({
@@ -58,4 +71,15 @@ async function login(app: Awaited<ReturnType<typeof buildApplication>>) {
   });
   const value = response.headers["set-cookie"];
   return { cookie: Array.isArray(value) ? value[0]! : value! };
+}
+
+function productionEnvironment() {
+  return loadEnvironment({
+    NODE_ENV: "production",
+    CONVERSATION_PROVIDER: "deterministic",
+    EMBEDDING_PROVIDER: "deterministic",
+    ADMIN_EMAIL: "admin@example.com",
+    ADMIN_PASSWORD: "change-this-password",
+    SESSION_SECRET: "test-session-secret-that-is-at-least-32-characters"
+  });
 }
