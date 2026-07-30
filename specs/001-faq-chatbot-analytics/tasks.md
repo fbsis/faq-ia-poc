@@ -255,35 +255,35 @@ retry, concurrent requests, dismissal, and reopening preserve one auditable resu
 ### Tests for User Story 5
 
 - [x] T119 [P] [US5] Add knowledge-gap page, detail, resolution, event, dismiss, and reopen contract tests in `packages/contracts/src/knowledge-gaps.test.ts`
-- [ ] T120 [P] [US5] Add open, resolving, resolved, failed, dismissed, reopened, and recurrence state tests in `apps/api/tests/unit/knowledge-gaps/knowledge-gap.test.ts`
-- [ ] T121 [P] [US5] Add resolution idempotency, request-hash, optimistic-version, and duplicate-prevention tests in `apps/api/tests/unit/knowledge-gaps/resolve-knowledge-gap.test.ts`
+- [x] T120 [P] [US5] Add open, resolving, resolved, failed, dismissed, reopened, and recurrence state tests in `apps/api/tests/unit/knowledge-gaps/knowledge-gap.test.ts`
+- [x] T121 [P] [US5] Add resolution idempotency, request-hash, optimistic-version, and duplicate-prevention tests in `apps/api/tests/unit/knowledge-gaps/resolve-knowledge-gap.test.ts`
 - [x] T122 [P] [US5] Add dismiss, reopen, and audit-event use-case tests in `apps/api/tests/unit/knowledge-gaps/gap-actions.test.ts`
 - [x] T123 [P] [US5] Add filtered inbox, derived counts, occurrence detail, and append-only audit integration tests in `apps/api/tests/integration/knowledge-gaps/postgres-gap-repository.test.ts`
-- [ ] T124 [P] [US5] Add concurrent resolution, atomic outbox, retry-key, and rollback integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-concurrency.test.ts`
-- [ ] T125 [P] [US5] Add worker completion, exhausted failure, recurrence, and stale-result integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-worker.test.ts`
-- [ ] T126 [P] [US5] Add BullMQ attempts, backoff, rate limit, retention, stalled recovery, and duplicate-execution tests in `apps/api/tests/integration/queue/bullmq-policy.test.ts`
-- [ ] T127 [P] [US5] Add Bull Board anonymous denial, admin access, read-only mode, and payload-redaction tests in `apps/api/tests/contract/bull-board.test.ts`
-- [ ] T128 [P] [US5] Add knowledge-gap list, filters, details, resolution, conflict, failure, dismiss, and reopen UI tests in `apps/web/tests/integration/knowledge-gaps/knowledge-gap-admin.test.tsx`
+- [x] T124 [P] [US5] Add concurrent resolution, atomic outbox, retry-key, and rollback integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-concurrency.test.ts`
+- [x] T125 [P] [US5] Add worker completion, exhausted failure, recurrence, and stale-result integration tests in `apps/api/tests/integration/knowledge-gaps/resolution-worker.test.ts`
+- [x] T126 [P] [US5] Add BullMQ attempts, backoff, rate limit, retention, stalled recovery, and duplicate-execution tests in `apps/api/tests/integration/queue/bullmq-policy.test.ts`
+- [x] T127 [P] [US5] Add Bull Board anonymous denial, admin access, read-only mode, and payload-redaction tests in `apps/api/tests/contract/bull-board.test.ts`
+- [x] T128 [P] [US5] Add knowledge-gap list, filters, details, resolution, conflict, failure, dismiss, and reopen UI tests in `apps/web/tests/integration/knowledge-gaps/knowledge-gap-admin.test.tsx`
 
 ### Implementation for User Story 5
 
 - [x] T129 [P] [US5] Define knowledge-gap list, detail, resolution, event, dismiss, and reopen Zod contracts in `packages/contracts/src/knowledge-gaps.ts`
-- [ ] T130 [P] [US5] Define GapResolution and append-only KnowledgeGapEvent domain rules in `apps/api/src/modules/knowledge-gaps/domain/gap-resolution.ts` and `apps/api/src/modules/knowledge-gaps/domain/knowledge-gap-event.ts`
-- [ ] T131 [P] [US5] Declare knowledge-gap query, command, audit, idempotency, and transaction ports in `apps/api/src/modules/knowledge-gaps/application/ports.ts`
-- [ ] T132 [US5] Implement filtered gap queries, derived occurrences, audit history, and row-locking commands in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`
+- [x] T130 [P] [US5] Define GapResolution and append-only KnowledgeGapEvent domain rules in `apps/api/src/modules/knowledge-gaps/domain/gap-resolution.ts` and `apps/api/src/modules/knowledge-gaps/domain/knowledge-gap-event.ts`
+- [x] T131 [P] [US5] Declare knowledge-gap query, command, audit, idempotency, and transaction ports in `apps/api/src/modules/knowledge-gaps/application/ports.ts`
+- [x] T132 [US5] Implement filtered gap queries, derived occurrences, audit history, and row-locking commands in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`
 - [x] T133 [P] [US5] Implement list and detail use cases in `apps/api/src/modules/knowledge-gaps/application/list-knowledge-gaps.ts` and `apps/api/src/modules/knowledge-gaps/application/get-knowledge-gap.ts`
 - [x] T134 [US5] Implement idempotent create-or-update resolution and transactional outbox creation in `apps/api/src/modules/knowledge-gaps/application/resolve-knowledge-gap.ts`
 - [x] T135 [P] [US5] Implement audited dismiss and reopen transitions in `apps/api/src/modules/knowledge-gaps/application/dismiss-knowledge-gap.ts` and `apps/api/src/modules/knowledge-gaps/application/reopen-knowledge-gap.ts`
-- [ ] T136 [P] [US5] Implement audited embedding retry eligibility in `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`
+- [x] T136 [P] [US5] Implement audited embedding retry eligibility in `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`
 - [x] T137 [US5] Complete gap resolution or safely return it to open from the embedding worker in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
-- [ ] T138 [US5] Expose authorized list, detail, resolve, dismiss, reopen, and retry endpoints in `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`
-- [ ] T139 [US5] Mount authenticated, redacted, production-read-only Bull Board at `/admin/queues` in `apps/api/src/infrastructure/queue/bull-board.ts`
-- [ ] T140 [P] [US5] Implement typed gap APIs and query/mutation hooks in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-api.ts` and `apps/web/src/features/knowledge-gap-admin/use-knowledge-gaps.ts`
-- [ ] T141 [P] [US5] Build inbox filters, sort controls, status badges, and paginated list in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-list.tsx`
+- [x] T138 [US5] Expose authorized list, detail, resolve, dismiss, reopen, and retry endpoints in `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`
+- [x] T139 [US5] Mount authenticated, redacted, production-read-only Bull Board at `/admin/queues` in `apps/api/src/infrastructure/queue/bull-board.ts`
+- [x] T140 [P] [US5] Implement typed gap APIs and query/mutation hooks in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-api.ts` and `apps/web/src/features/knowledge-gap-admin/use-knowledge-gaps.ts`
+- [x] T141 [P] [US5] Build inbox filters, sort controls, status badges, and paginated list in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-list.tsx`
 - [x] T142 [P] [US5] Build occurrence details and append-only audit timeline in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-details.tsx` and `apps/web/src/features/knowledge-gap-admin/gap-audit-timeline.tsx`
-- [ ] T143 [P] [US5] Build the create/update resolution form, prefilled from the representative question and occurrence variants, with pending, failed, retry, and conflict states in `apps/web/src/features/knowledge-gap-admin/resolve-gap-form.tsx`
-- [ ] T144 [US5] Assemble protected inbox/detail routes with dismiss and reopen controls in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-admin-page.tsx` and `apps/web/src/app/router.tsx`
-- [ ] T145 [US5] Add resolution, idempotency, concurrency, failure, dismiss, reopen, and Bull Board Playwright journeys in `tests/e2e/knowledge-gap-admin.spec.ts`
+- [x] T143 [P] [US5] Build the create/update resolution form, prefilled from the representative question and occurrence variants, with pending, failed, retry, and conflict states in `apps/web/src/features/faq-admin/faq-admin-page.tsx`
+- [x] T144 [US5] Assemble protected inbox/detail routes with dismiss and reopen controls in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-admin-page.tsx` and `apps/web/src/app/router.tsx`
+- [x] T145 [US5] Add resolution, idempotency, concurrency, failure, dismiss, reopen, and Bull Board Playwright journeys in `tests/e2e/knowledge-gap-admin.spec.ts`
 
 **Checkpoint**: The improvement loop from an unanswered interaction to active approved knowledge is
 durable, idempotent, auditable, and operationally visible.
@@ -295,15 +295,21 @@ durable, idempotent, auditable, and operationally visible.
 **Purpose**: Verify constitution gates, security, performance, delivery, and operating
 documentation across all stories.
 
-- [ ] T146 [P] Add correlation and non-sensitive metrics for HTTP, cache, retrieval, OpenAI, outbox, jobs, and gaps in `apps/api/src/infrastructure/observability/metrics.ts`
-- [ ] T147 [P] Add log-redaction and correlation propagation regression tests in `apps/api/tests/integration/observability/observability.test.ts`
-- [ ] T148 [P] Add security headers, payload limits, public chat rate limits, and production cookie policy in `apps/api/src/infrastructure/http/security.ts`
-- [ ] T149 [P] Add unauthorized, CSRF, cookie, rate-limit, and sensitive-data security tests in `apps/api/tests/integration/security/security-controls.test.ts`
-- [ ] T150 [P] Add keyboard, screen-reader, contrast, and responsive checks for critical pages in `apps/web/tests/integration/accessibility/critical-pages.test.tsx`
-- [ ] T151 [P] Add the labeled Portuguese retrieval evaluation corpus and 90% top-result gate in `tests/retrieval/fixtures/portuguese-faqs.json` and `tests/retrieval/evaluate-retrieval.test.ts`
+- [x] T146 [P] Add correlation and non-sensitive metrics for HTTP, cache, retrieval, OpenAI, outbox, jobs, and gaps in `apps/api/src/infrastructure/observability/metrics.ts`
+- [x] T147 [P] Add log-redaction and correlation propagation regression tests in `apps/api/tests/integration/observability/observability.test.ts`
+- [x] T148 [P] Add security headers, payload limits, public chat rate limits, and production cookie policy in `apps/api/src/infrastructure/http/security.ts`
+- [x] T149 [P] Add unauthorized, CSRF, cookie, rate-limit, and sensitive-data security tests in `apps/api/tests/integration/security/security-controls.test.ts`
+- [x] T150 [P] Add keyboard, screen-reader, contrast, and responsive checks for critical pages in `apps/web/tests/integration/accessibility/critical-pages.test.tsx`
+- [x] T151 [P] Add the labeled Portuguese retrieval evaluation corpus and 90% top-result gate in `tests/retrieval/fixtures/portuguese-faqs.json` and `tests/retrieval/evaluate-retrieval.test.ts`
+
+**Deferred from the current delivery**: T152, T153, and T155–T158 remain intentionally
+open because performance certification, production-container assertions, operational
+runbooks, deterministic demo data, and the complete release checklist are not required for
+the present demonstration.
+
 - [ ] T152 [P] Add 100-session chat and 12-month dashboard performance scenarios in `tests/performance/chat-and-dashboard.k6.js`
 - [ ] T153 [P] Add production image, non-root, health, AOF, noeviction, SPA-cache, and dependency-pruning checks in `tests/containers/production-images.test.sh`
-- [ ] T154 [P] Add local setup, architecture, commands, environment, migration, test, and troubleshooting documentation in `README.md`
+- [x] T154 [P] Add local setup, architecture, commands, environment, migration, test, and troubleshooting documentation in `README.md`
 - [ ] T155 [P] Document queue operations, failed-job recovery, Bull Board access, retention, and Redis restoration in `docs/operations/queue-runbook.md`
 - [ ] T156 [P] Document privacy, OpenAI data flow, interaction retention, secret handling, and redaction in `docs/operations/privacy-and-security.md`
 - [ ] T157 Add reproducible quickstart seed and validation commands in `apps/api/src/infrastructure/database/quickstart-seed.ts` and `package.json`
@@ -543,10 +549,10 @@ senha?” instead of asking the user to confirm an equivalent suggestion.
 ## Phase 13: Convergence
 
 - [X] T178 CRITICAL Decouple knowledge-gap domain rules from infrastructure errors and complete framework-free GapResolution and KnowledgeGapEvent transition invariants in `apps/api/src/modules/knowledge-gaps/domain/gap-resolution.ts`, `apps/api/src/modules/knowledge-gaps/domain/knowledge-gap-event.ts`, and their unit tests per Constitution II and T130 (contradicts)
-- [ ] T179 Make resolution, dismiss, and reopen idempotency safe under concurrent same-key and different-key requests, including request-hash replay, optimistic conflicts, duplicate prevention, atomic outbox rollback, and integration coverage in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`, `apps/api/tests/unit/knowledge-gaps/resolve-knowledge-gap.test.ts`, and `apps/api/tests/integration/knowledge-gaps/resolution-concurrency.test.ts` per FR-029 and FR-031 (partial)
-- [ ] T180 Implement an audited retry of a failed gap resolution, support create and update resolution modes, expose the authorized retry endpoint, and present pending, failed, retry, and conflict recovery in the administration UI through `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`, `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-api.ts`, `apps/web/src/features/knowledge-gap-admin/use-knowledge-gaps.ts`, and `apps/web/src/features/faq-admin/faq-admin-page.tsx` per US5/AC3, FR-025, and FR-031 (partial)
-- [ ] T181 Complete the unanswered inbox with category, date-range, minimum-frequency, and page navigation controls synchronized with its query in `packages/contracts/src/knowledge-gaps.ts`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-admin-page.tsx`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-list.tsx`, and UI tests per FR-022 (partial)
-- [ ] T182 Complete configurable BullMQ retry/backoff jitter, local and global concurrency, rate limiting, retention, stalled recovery, graceful shutdown, and duplicate-execution verification in `apps/api/src/infrastructure/queue/config.ts`, `apps/api/src/commands/start-worker.ts`, and `apps/api/tests/integration/queue/bullmq-policy.test.ts` per plan: BullMQ topology and policy (partial)
-- [ ] T183 Mount authenticated, payload-redacted, production-read-only Bull Board at `/admin/queues`, add required dependencies and environment controls, and verify anonymous denial, administrator access, and redaction in `apps/api/src/infrastructure/queue/bull-board.ts` and `apps/api/tests/contract/bull-board.test.ts` per plan: Queue dashboard (missing)
-- [ ] T184 Verify resolution completion, exhausted failure, recurrence, stale results, historical-interaction immutability, and append-only audit atomicity against PostgreSQL and BullMQ in `apps/api/tests/integration/knowledge-gaps/resolution-worker.test.ts` per FR-026, FR-028, FR-030, and Constitution IV (partial)
-- [ ] T185 Complete user-visible conflict, failure, retry, dismiss, and reopen coverage and add the full protected resolution journey in `apps/web/tests/integration/knowledge-gaps/knowledge-gap-admin.test.tsx` and `tests/e2e/knowledge-gap-admin.spec.ts` per US5 Independent Test and Constitution IV (missing)
+- [X] T179 Make resolution, dismiss, and reopen idempotency safe under concurrent same-key and different-key requests, including request-hash replay, optimistic conflicts, duplicate prevention, atomic outbox rollback, and integration coverage in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`, `apps/api/tests/unit/knowledge-gaps/resolve-knowledge-gap.test.ts`, and `apps/api/tests/integration/knowledge-gaps/resolution-concurrency.test.ts` per FR-029 and FR-031 (partial)
+- [X] T180 Implement an audited retry of a failed gap resolution, support create and update resolution modes, expose the authorized retry endpoint, and present pending, failed, retry, and conflict recovery in the administration UI through `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`, `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-api.ts`, `apps/web/src/features/knowledge-gap-admin/use-knowledge-gaps.ts`, and `apps/web/src/features/faq-admin/faq-admin-page.tsx` per US5/AC3, FR-025, and FR-031 (partial)
+- [X] T181 Complete the unanswered inbox with category, date-range, minimum-frequency, and page navigation controls synchronized with its query in `packages/contracts/src/knowledge-gaps.ts`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-admin-page.tsx`, `apps/web/src/features/knowledge-gap-admin/knowledge-gap-list.tsx`, and UI tests per FR-022 (partial)
+- [X] T182 Complete configurable BullMQ retry/backoff jitter, local and global concurrency, rate limiting, retention, stalled recovery, graceful shutdown, and duplicate-execution verification in `apps/api/src/infrastructure/queue/config.ts`, `apps/api/src/commands/start-worker.ts`, and `apps/api/tests/integration/queue/bullmq-policy.test.ts` per plan: BullMQ topology and policy (partial)
+- [X] T183 Mount authenticated, payload-redacted, production-read-only Bull Board at `/admin/queues`, add required dependencies and environment controls, and verify anonymous denial, administrator access, and redaction in `apps/api/src/infrastructure/queue/bull-board.ts` and `apps/api/tests/contract/bull-board.test.ts` per plan: Queue dashboard (missing)
+- [X] T184 Verify resolution completion, exhausted failure, recurrence, stale results, historical-interaction immutability, and append-only audit atomicity against PostgreSQL and BullMQ in `apps/api/tests/integration/knowledge-gaps/resolution-worker.test.ts` per FR-026, FR-028, FR-030, and Constitution IV (partial)
+- [X] T185 Complete user-visible conflict, failure, retry, dismiss, and reopen coverage and add the full protected resolution journey in `apps/web/tests/integration/knowledge-gaps/knowledge-gap-admin.test.tsx` and `tests/e2e/knowledge-gap-admin.spec.ts` per US5 Independent Test and Constitution IV (missing)
