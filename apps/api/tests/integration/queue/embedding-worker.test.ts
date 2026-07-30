@@ -45,14 +45,60 @@ describe("FAQ embedding processor", () => {
       processFaqEmbedding(
         { faqId: "00000000-0000-4000-8000-000000000002", contentVersion: 1 },
         repository,
-        { embed: async () => { throw Object.assign(new Error("timeout"), { transient: true }); } }
+        {
+          embed: async () => {
+            throw Object.assign(new Error("timeout"), { transient: true });
+          }
+        }
       )
     ).rejects.toThrow("timeout");
     await processFaqEmbedding(
       { faqId: "00000000-0000-4000-8000-000000000002", contentVersion: 1 },
       repository,
-      { embed: async () => { throw new Error("invalid input"); } }
+      {
+        embed: async () => {
+          throw new Error("invalid input");
+        }
+      }
     );
     expect(failures).toEqual(["invalid input"]);
+  });
+
+  it("forwards the resolution identifier so activation can close its knowledge gap", async () => {
+    const activations: Array<{ faqId: string; version: number; resolutionId?: string }> = [];
+    const repository = {
+      getEmbeddingContent: async () => ({
+        faqId: "00000000-0000-4000-8000-000000000002",
+        contentVersion: 1,
+        text: "Pergunta\nResposta"
+      }),
+      activateEmbedding: async (
+        faqId: string,
+        version: number,
+        _embedding: number[],
+        resolutionId?: string
+      ) => {
+        activations.push({ faqId, version, resolutionId });
+      },
+      failEmbedding: async () => undefined
+    };
+
+    await processFaqEmbedding(
+      {
+        faqId: "00000000-0000-4000-8000-000000000002",
+        contentVersion: 1,
+        resolutionId: "00000000-0000-4000-8000-000000000003"
+      },
+      repository,
+      { embed: async () => [1, 0] }
+    );
+
+    expect(activations).toEqual([
+      {
+        faqId: "00000000-0000-4000-8000-000000000002",
+        version: 1,
+        resolutionId: "00000000-0000-4000-8000-000000000003"
+      }
+    ]);
   });
 });

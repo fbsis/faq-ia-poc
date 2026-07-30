@@ -76,6 +76,10 @@ describe("knowledge gap administration", () => {
     await userEvent.click(screen.getByRole("button", { name: /ver detalhes/i }));
     expect(await screen.findByText("Como consigo outra via?")).toBeVisible();
     expect(screen.getByText("A dúvida voltou a ocorrer.")).toBeVisible();
+    expect(screen.getByRole("link", { name: /responder pergunta/i })).toHaveAttribute(
+      "href",
+      `/admin/faqs?knowledgeGapId=${gap.id}`
+    );
   });
 
   it("renders an actionable empty state", async () => {

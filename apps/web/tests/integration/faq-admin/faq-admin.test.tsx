@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -33,10 +33,10 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function renderPage() {
+function renderPage(initialEntry = "/admin/faqs") {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <FaqAdminPage />
       </MemoryRouter>
     </QueryClientProvider>
@@ -53,7 +53,11 @@ describe("FAQ administration", () => {
       ),
       http.post(`/api/v1/faqs/${faq.id}/embedding-retries`, () => {
         retried = true;
-        return HttpResponse.json({ ...faq, status: "embedding_pending", embeddingError: undefined });
+        return HttpResponse.json({
+          ...faq,
+          status: "embedding_pending",
+          embeddingError: undefined
+        });
       })
     );
     renderPage();
@@ -71,8 +75,13 @@ describe("FAQ administration", () => {
         HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 })
       ),
       http.post("/api/v1/faqs", async ({ request }) => {
-        created = (await request.json() as { question: string }).question === "Como acesso minha conta?";
-        return HttpResponse.json({ ...faq, question: "Como acesso minha conta?", status: "embedding_pending" });
+        created =
+          ((await request.json()) as { question: string }).question === "Como acesso minha conta?";
+        return HttpResponse.json({
+          ...faq,
+          question: "Como acesso minha conta?",
+          status: "embedding_pending"
+        });
       })
     );
     renderPage();
@@ -111,10 +120,15 @@ describe("FAQ administration", () => {
     server.use(
       http.get("/api/v1/categories", () => HttpResponse.json([category])),
       http.get("/api/v1/faqs", () =>
-        HttpResponse.json({ items: [{ ...faq, status: active ? "active" : "inactive" }], page: 1, pageSize: 20, total: 1 })
+        HttpResponse.json({
+          items: [{ ...faq, status: active ? "active" : "inactive" }],
+          page: 1,
+          pageSize: 20,
+          total: 1
+        })
       ),
       http.patch(`/api/v1/faqs/${faq.id}/status`, async ({ request }) => {
-        active = (await request.json() as { active: boolean }).active;
+        active = ((await request.json()) as { active: boolean }).active;
         return HttpResponse.json({ ...faq, status: active ? "embedding_pending" : "inactive" });
       })
     );
@@ -122,5 +136,69 @@ describe("FAQ administration", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /desativar/i }));
     expect(await screen.findByRole("button", { name: /restaurar/i })).toBeVisible();
+  });
+
+  it("prefills a FAQ from a knowledge gap and submits its resolution", async () => {
+    const gap = {
+      id: "00000000-0000-4000-8000-000000000101",
+      representativeQuestion: "Como emitir a segunda via?",
+      status: "open",
+      occurrenceCount: 2,
+      firstOccurredAt: "2026-07-29T12:00:00.000Z",
+      lastOccurredAt: "2026-07-30T12:00:00.000Z",
+      version: 2,
+      createdAt: "2026-07-29T12:00:00.000Z",
+      updatedAt: "2026-07-30T12:00:00.000Z",
+      occurrences: [
+        {
+          interactionId: "00000000-0000-4000-8000-000000000201",
+          question: "Como consigo outra via?",
+          occurredAt: "2026-07-30T12:00:00.000Z"
+        }
+      ],
+      events: []
+    };
+    let submitted: Record<string, unknown> | undefined;
+    server.use(
+      http.get("/api/v1/categories", () => HttpResponse.json([category])),
+      http.get("/api/v1/faqs", () =>
+        HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 })
+      ),
+      http.get(`/api/v1/knowledge-gaps/${gap.id}`, () => HttpResponse.json(gap)),
+      http.post(`/api/v1/knowledge-gaps/${gap.id}/resolutions`, async ({ request }) => {
+        submitted = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(
+          {
+            id: "00000000-0000-4000-8000-000000000301",
+            knowledgeGapId: gap.id,
+            mode: "create",
+            faqId: faq.id,
+            faqStatus: "embedding_pending",
+            status: "pending",
+            createdAt: "2026-07-30T13:00:00.000Z"
+          },
+          { status: 202 }
+        );
+      })
+    );
+    renderPage(`/admin/faqs?knowledgeGapId=${gap.id}`);
+
+    expect(await screen.findByDisplayValue(gap.representativeQuestion)).toBeVisible();
+    expect(screen.getByDisplayValue("Como consigo outra via?")).toBeVisible();
+    await userEvent.type(
+      screen.getByLabelText(/resposta/i),
+      "Acesse Financeiro e selecione 2ª via."
+    );
+    await userEvent.click(screen.getByRole("button", { name: /salvar e resolver pergunta/i }));
+
+    await waitFor(() =>
+      expect(submitted).toMatchObject({
+        mode: "create",
+        expectedVersion: 2,
+        question: gap.representativeQuestion,
+        aliases: ["Como consigo outra via?"],
+        answer: "Acesse Financeiro e selecione 2ª via."
+      })
+    );
   });
 });

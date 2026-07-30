@@ -1,4 +1,9 @@
-import { errorEnvelopeSchema, knowledgeGapPageSchema } from "@faq/contracts";
+import {
+  errorEnvelopeSchema,
+  gapResolutionSchema,
+  knowledgeGapPageSchema,
+  type KnowledgeGapDetails
+} from "@faq/contracts";
 import { describe, expect, it } from "vitest";
 import { buildApplication } from "../../src/bootstrap/build-application.js";
 
@@ -50,6 +55,49 @@ describe("knowledge gap HTTP contract", () => {
     });
     await app.close();
   });
+
+  it("accepts an idempotent prefilled resolution and leaves it pending for embedding", async () => {
+    const knowledgeGap: KnowledgeGapDetails = {
+      id: "00000000-0000-4000-8000-000000000101",
+      representativeQuestion: "Como emitir a segunda via?",
+      status: "open",
+      occurrenceCount: 2,
+      firstOccurredAt: "2026-07-29T12:00:00.000Z",
+      lastOccurredAt: "2026-07-30T12:00:00.000Z",
+      version: 2,
+      createdAt: "2026-07-29T12:00:00.000Z",
+      updatedAt: "2026-07-30T12:00:00.000Z",
+      occurrences: [],
+      events: []
+    };
+    const app = await buildApplication({
+      mode: "test",
+      testOverrides: { knowledgeGap }
+    });
+    const auth = await login(app);
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/knowledge-gaps/${knowledgeGap.id}/resolutions`,
+      headers: { ...auth, "idempotency-key": "resolution-request-1" },
+      payload: {
+        mode: "create",
+        categoryId: "00000000-0000-4000-8000-000000000010",
+        question: knowledgeGap.representativeQuestion,
+        aliases: ["Como consigo outra via?"],
+        answer: "Acesse Financeiro e selecione 2ª via.",
+        expectedVersion: knowledgeGap.version
+      }
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(gapResolutionSchema.parse(response.json())).toMatchObject({
+      knowledgeGapId: knowledgeGap.id,
+      mode: "create",
+      faqStatus: "embedding_pending",
+      status: "pending"
+    });
+    await app.close();
+  });
 });
 
 async function login(app: Awaited<ReturnType<typeof buildApplication>>) {
@@ -60,6 +108,7 @@ async function login(app: Awaited<ReturnType<typeof buildApplication>>) {
   });
   const value = response.headers["set-cookie"];
   return {
-    cookie: Array.isArray(value) ? value[0]! : value!
+    cookie: Array.isArray(value) ? value[0]! : value!,
+    "x-csrf-token": String(response.headers["x-csrf-token"])
   };
 }
