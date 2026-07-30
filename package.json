@@ -17,6 +17,7 @@
     "test": "vitest run --coverage",
     "test:unit": "vitest run --exclude '**/integration/**'",
     "test:integration": "RUN_INTEGRATION=true vitest run '**/integration/**'",
+    "test:retrieval": "vitest run --config tests/retrieval/vitest.config.ts",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "db:migrate": "pnpm --filter @faq/api db:migrate",
