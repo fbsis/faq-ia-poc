@@ -270,4 +270,30 @@ describe("knowledge gap administration", () => {
       await screen.findByText(/a pendência mudou.*recarregue os dados/i)
     ).toBeVisible();
   });
+
+  it("refreshes the inbox until a resolving gap reaches its final status", async () => {
+    let requestCount = 0;
+    server.use(
+      http.get("/api/v1/knowledge-gaps", () => {
+        requestCount += 1;
+        return HttpResponse.json({
+          items: [
+            {
+              ...gap,
+              status: requestCount === 1 ? "resolving" : "resolved",
+              version: requestCount === 1 ? 3 : 4
+            }
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1
+        });
+      })
+    );
+    renderPage();
+
+    expect(await screen.findByText("Em resolução")).toBeVisible();
+    expect(await screen.findByText("Resolvida", {}, { timeout: 2_000 })).toBeVisible();
+    expect(requestCount).toBeGreaterThanOrEqual(2);
+  });
 });

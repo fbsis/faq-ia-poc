@@ -9,7 +9,7 @@ test("administrator resolves an unanswered question and the chatbot uses the app
   await page.goto("/");
   await page.getByLabel(/digite sua pergunta/i).fill(question);
   await page.getByRole("button", { name: /enviar/i }).click();
-  await expect(page.getByText(/uma pessoa entrará em contato/i)).toBeVisible();
+  await expect(page.getByText(/não sei responder essa pergunta com segurança/i)).toBeVisible();
 
   await page.goto("/login");
   await page.getByLabel(/e-mail/i).fill("admin@example.com");
