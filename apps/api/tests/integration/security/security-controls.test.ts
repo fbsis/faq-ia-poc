@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildApplication } from "../../../src/bootstrap/build-application.js";
+import { buildApplication } from "../../helpers/build-test-application.js";
 import { loadEnvironment } from "../../../src/infrastructure/config/environment.js";
 
 describe("HTTP security controls", () => {

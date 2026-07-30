@@ -1,6 +1,6 @@
 import { analyticsSummarySchema, errorEnvelopeSchema } from "@faq/contracts";
 import { describe, expect, it } from "vitest";
-import { buildApplication } from "../../src/bootstrap/build-application.js";
+import { buildApplication } from "../helpers/build-test-application.js";
 
 describe("GET /api/v1/analytics/summary", () => {
   it("rejects anonymous access", async () => {

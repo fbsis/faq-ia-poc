@@ -6,7 +6,7 @@ import {
   type KnowledgeGapDetails
 } from "@faq/contracts";
 import { describe, expect, it } from "vitest";
-import { buildApplication } from "../../src/bootstrap/build-application.js";
+import { buildApplication } from "../helpers/build-test-application.js";
 
 describe("knowledge gap HTTP contract", () => {
   it("rejects anonymous inbox access", async () => {

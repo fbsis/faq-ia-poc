@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildApplication } from "../../src/bootstrap/build-application.js";
+import { buildApplication } from "../helpers/build-test-application.js";
 
 describe("authentication HTTP contract", () => {
   it("sets an HTTP-only cookie and returns a CSRF token after login", async () => {

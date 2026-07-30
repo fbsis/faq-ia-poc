@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { askQuestionResponseSchema, errorEnvelopeSchema } from "@faq/contracts";
-import { buildApplication } from "../../src/bootstrap/build-application.js";
+import { buildApplication } from "../helpers/build-test-application.js";
 
 describe("POST /api/v1/chat/questions", () => {
   it("returns an approved FAQ answer", async () => {

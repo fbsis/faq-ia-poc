@@ -1,6 +1,6 @@
 import { categorySchema, errorEnvelopeSchema, faqPageSchema, faqSchema } from "@faq/contracts";
 import { describe, expect, it } from "vitest";
-import { buildApplication } from "../../src/bootstrap/build-application.js";
+import { buildApplication } from "../helpers/build-test-application.js";
 
 describe("FAQ administration HTTP contract", () => {
   it("rejects anonymous access", async () => {
