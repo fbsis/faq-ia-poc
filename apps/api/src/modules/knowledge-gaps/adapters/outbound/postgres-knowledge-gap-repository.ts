@@ -104,6 +104,9 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
         )`
       );
     }
+    if (query.minFrequency) {
+      filters.push(`stats.occurrence_count >= ${parameter(query.minFrequency)}`);
+    }
     const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
     const orderBy = {
       occurrences_desc: "stats.occurrence_count DESC, stats.last_occurred_at DESC",

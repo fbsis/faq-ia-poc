@@ -27,6 +27,7 @@ export function listKnowledgeGaps(
   if (query.from) parameters.set("from", query.from);
   if (query.to) parameters.set("to", query.to);
   if (query.categoryId) parameters.set("categoryId", query.categoryId);
+  if (query.minFrequency) parameters.set("minFrequency", String(query.minFrequency));
   return requestJson(`/api/v1/knowledge-gaps?${parameters}`, {
     method: "GET",
     schema: knowledgeGapPageSchema

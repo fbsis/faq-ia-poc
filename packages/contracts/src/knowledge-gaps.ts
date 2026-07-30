@@ -11,6 +11,7 @@ export const knowledgeGapListQuerySchema = pageRequestSchema
     from: z.string().date().optional(),
     to: z.string().date().optional(),
     categoryId: identifierSchema.optional(),
+    minFrequency: z.coerce.number().int().positive().max(1_000_000).optional(),
     sort: knowledgeGapSortSchema.default("occurrences_desc")
   })
   .superRefine(({ from, to }, context) => {

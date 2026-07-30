@@ -2,6 +2,8 @@ import { Button } from "@faq/ui";
 import { AlertCircle, Inbox, MessageCircleQuestion } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { listCategories } from "../faq-admin/faq-api.js";
 import { KnowledgeGapDetails } from "./knowledge-gap-details.js";
 import { KnowledgeGapList } from "./knowledge-gap-list.js";
 import { useKnowledgeGap, useKnowledgeGaps } from "./use-knowledge-gaps.js";
@@ -10,15 +12,24 @@ import type { KnowledgeGapListQuery, KnowledgeGapSort, KnowledgeGapStatus } from
 export function KnowledgeGapAdminPage() {
   const [status, setStatus] = useState<KnowledgeGapStatus | "all">("all");
   const [sort, setSort] = useState<KnowledgeGapSort>("occurrences_desc");
+  const [page, setPage] = useState(1);
+  const [categoryId, setCategoryId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [minFrequency, setMinFrequency] = useState("1");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories });
   const query = useMemo<KnowledgeGapListQuery>(
     () => ({
-      page: 1,
+      page,
       pageSize: 20,
       sort,
-      ...(status === "all" ? {} : { status })
+      ...(status === "all" ? {} : { status }),
+      ...(categoryId ? { categoryId } : {}),
+      ...(from && to ? { from, to } : {}),
+      ...(Number(minFrequency) > 1 ? { minFrequency: Number(minFrequency) } : {})
     }),
-    [sort, status]
+    [categoryId, from, minFrequency, page, sort, status, to]
   );
   const gaps = useKnowledgeGaps(query);
   const details = useKnowledgeGap(selectedId);
@@ -62,14 +73,17 @@ export function KnowledgeGapAdminPage() {
 
         <section
           aria-label="Filtros das perguntas sem resposta"
-          className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2"
+          className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
         >
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Status
             <select
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
               value={status}
-              onChange={(event) => setStatus(event.target.value as KnowledgeGapStatus | "all")}
+              onChange={(event) => {
+                setPage(1);
+                setStatus(event.target.value as KnowledgeGapStatus | "all");
+              }}
             >
               <option value="all">Todos</option>
               <option value="open">Abertas</option>
@@ -83,12 +97,70 @@ export function KnowledgeGapAdminPage() {
             <select
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
               value={sort}
-              onChange={(event) => setSort(event.target.value as KnowledgeGapSort)}
+              onChange={(event) => {
+                setPage(1);
+                setSort(event.target.value as KnowledgeGapSort);
+              }}
             >
               <option value="occurrences_desc">Mais frequentes</option>
               <option value="latest_desc">Mais recentes</option>
               <option value="oldest_asc">Mais antigas</option>
             </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Categoria
+            <select
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+              value={categoryId}
+              onChange={(event) => {
+                setPage(1);
+                setCategoryId(event.target.value);
+              }}
+            >
+              <option value="">Todas</option>
+              {categories.data?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Data inicial
+            <input
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+              type="date"
+              value={from}
+              onChange={(event) => {
+                setPage(1);
+                setFrom(event.target.value);
+              }}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Data final
+            <input
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+              type="date"
+              value={to}
+              onChange={(event) => {
+                setPage(1);
+                setTo(event.target.value);
+              }}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Frequência mínima
+            <input
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+              min={1}
+              type="number"
+              value={minFrequency}
+              onChange={(event) => {
+                setPage(1);
+                setMinFrequency(event.target.value);
+              }}
+            />
           </label>
         </section>
 
@@ -112,7 +184,12 @@ export function KnowledgeGapAdminPage() {
           </StatusPanel>
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
-            <KnowledgeGapList page={gaps.data} onSelect={setSelectedId} />
+            <KnowledgeGapList
+              page={gaps.data}
+              onNext={() => setPage((current) => current + 1)}
+              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+              onSelect={setSelectedId}
+            />
             {selectedId ? (
               details.isPending ? (
                 <StatusPanel>Carregando detalhes…</StatusPanel>

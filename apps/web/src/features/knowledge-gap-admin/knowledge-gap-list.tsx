@@ -4,16 +4,35 @@ import { Clock3, MessageSquareMore } from "lucide-react";
 
 export function KnowledgeGapList({
   page,
+  onNext,
+  onPrevious,
   onSelect
 }: {
   page: KnowledgeGapPage;
+  onNext: () => void;
+  onPrevious: () => void;
   onSelect: (id: string) => void;
 }) {
+  const lastPage = Math.max(1, Math.ceil(page.total / page.pageSize));
   return (
     <section aria-label="Pendências encontradas" className="grid gap-4">
       {page.items.map((gap) => (
         <KnowledgeGapCard gap={gap} key={gap.id} onSelect={() => onSelect(gap.id)} />
       ))}
+      <nav
+        aria-label="Paginação das pendências"
+        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4"
+      >
+        <Button disabled={page.page <= 1} variant="ghost" onClick={onPrevious}>
+          Página anterior
+        </Button>
+        <span className="text-sm text-slate-600">
+          Página {page.page} de {lastPage}
+        </span>
+        <Button disabled={page.page >= lastPage} variant="ghost" onClick={onNext}>
+          Próxima página
+        </Button>
+      </nav>
     </section>
   );
 }
