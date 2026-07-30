@@ -470,17 +470,17 @@ with hybrid fuzzy retrieval.
 
 ### Tests
 
-- [ ] T166 [US1] Add safe Markdown rendering tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
-- [ ] T167 [US2] Add contextual unanswered-response and deterministic fallback tests in `apps/api/tests/unit/chat/ask-question.test.ts`
-- [ ] T168 [US1] Add semantic-plus-lexical merge tests in `apps/api/tests/unit/chat/ask-question.test.ts`
-- [ ] T169 [US1] Add Portuguese stemming, alias, answer-text, and trigram search integration tests in `apps/api/tests/integration/chat/postgres-faq-search.test.ts`
+- [X] T166 [US1] Add safe Markdown rendering tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
+- [X] T167 [US2] Add contextual unanswered-response and deterministic fallback tests in `apps/api/tests/unit/chat/ask-question.test.ts`
+- [X] T168 [US1] Add semantic-plus-lexical merge tests in `apps/api/tests/unit/chat/ask-question.test.ts`
+- [X] T169 [US1] Add Portuguese stemming, alias, answer-text, and trigram search integration tests in `apps/api/tests/integration/chat/postgres-faq-search.test.ts`
 
 ### Implementation
 
-- [ ] T170 [US1] Render assistant messages with safe GitHub-flavored Markdown in `apps/web/src/features/chat/markdown-message.tsx`, `apps/web/src/features/chat/chat-message.tsx`, and `apps/web/package.json`
-- [ ] T171 [US2] Generate contextual clarification messages with a safe deterministic fallback in `apps/api/src/modules/chat/application/ports.ts`, `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`, and `apps/api/src/modules/chat/application/ask-question.ts`
-- [ ] T172 [US1] Run and merge semantic and lexical retrieval for every non-exact query in `apps/api/src/modules/chat/application/ask-question.ts`
-- [ ] T173 [US1] Enable PostgreSQL trigram search and expand lexical retrieval across questions, aliases, and answers in `apps/api/src/infrastructure/database/migrations/0003_hybrid_faq_search.sql`, `apps/api/src/infrastructure/database/migrate.ts`, and `apps/api/src/modules/chat/adapters/outbound/postgres-faq-search.ts`
+- [X] T170 [US1] Render assistant messages with safe GitHub-flavored Markdown in `apps/web/src/features/chat/markdown-message.tsx`, `apps/web/src/features/chat/chat-message.tsx`, and `apps/web/package.json`
+- [X] T171 [US2] Generate contextual clarification messages with a safe deterministic fallback in `apps/api/src/modules/chat/application/ports.ts`, `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`, and `apps/api/src/modules/chat/application/ask-question.ts`
+- [X] T172 [US1] Run and merge semantic and lexical retrieval for every non-exact query in `apps/api/src/modules/chat/application/ask-question.ts`
+- [X] T173 [US1] Enable PostgreSQL trigram search and expand lexical retrieval across questions, aliases, and answers in `apps/api/src/infrastructure/database/migrations/0003_hybrid_faq_search.sql`, `apps/api/src/infrastructure/database/migrate.ts`, and `apps/api/src/modules/chat/adapters/outbound/postgres-faq-search.ts`
 
 **Checkpoint**: Markdown is readable and safe, unanswered replies ask for useful context, and FAQ
 retrieval combines vector meaning with Portuguese lexical and fuzzy evidence.

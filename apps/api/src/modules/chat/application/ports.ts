@@ -32,6 +32,10 @@ export interface ConversationAgent {
     matchedQuestion: string;
     approvedAnswer: string;
   }): Promise<string>;
+  createUnansweredResponse(input: {
+    question: string;
+    history: ConversationMessage[];
+  }): Promise<string>;
 }
 
 export interface CachedAnswer {

@@ -84,6 +84,7 @@ export class AskQuestion {
     cacheStatus: CacheStatus
   ): Promise<AskQuestionResponse> {
     const displayedAnswer = await this.createDisplayedAnswer(rawQuestion, history, result);
+    const displayedMessage = await this.createDisplayedMessage(rawQuestion, history, result);
     const interactionId = await this.persist(
       rawQuestion,
       normalizedQuestion,
@@ -91,7 +92,7 @@ export class AskQuestion {
       cacheStatus,
       displayedAnswer
     );
-    return toResponse(interactionId, result, displayedAnswer);
+    return toResponse(interactionId, result, displayedAnswer, displayedMessage);
   }
 
   private async createDisplayedAnswer(
@@ -112,6 +113,19 @@ export class AskQuestion {
     }
   }
 
+  private async createDisplayedMessage(
+    question: string,
+    history: NonNullable<AskQuestionRequest["history"]>,
+    result: CachedAnswer
+  ): Promise<string | null> {
+    if (result.status !== "unanswered") return null;
+    try {
+      return await this.dependencies.conversation.createUnansweredResponse({ question, history });
+    } catch {
+      return "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa.";
+    }
+  }
+
   private async retrieve(
     normalizedQuestion: string,
     categoryId: string | null
@@ -119,22 +133,31 @@ export class AskQuestion {
     const exact = await this.dependencies.search.findExact(normalizedQuestion, categoryId);
     if (exact) return decideRetrieval({ candidate: exact, exact: true });
 
-    let candidates: FaqCandidate[] = [];
-    try {
-      const embedding = await this.dependencies.embeddings.embed(normalizedQuestion);
-      candidates = await this.dependencies.search.findSemantic(embedding, categoryId, 5);
-    } catch {
-      candidates = [];
-    }
-    if (candidates.length === 0) {
-      candidates = await this.dependencies.search.findFullText(normalizedQuestion, categoryId, 5);
-    }
+    const [semanticCandidates, lexicalCandidates] = await Promise.all([
+      this.findSemantic(normalizedQuestion, categoryId),
+      this.dependencies.search
+        .findFullText(normalizedQuestion, categoryId, 8)
+        .catch(() => [] as FaqCandidate[])
+    ]);
+    const candidates = mergeCandidates(semanticCandidates, lexicalCandidates);
     return decideRetrieval({
       candidate: candidates[0] ?? null,
       exact: false,
       acceptanceThreshold: this.dependencies.acceptanceThreshold,
       ambiguityThreshold: this.dependencies.ambiguityThreshold
     });
+  }
+
+  private async findSemantic(
+    normalizedQuestion: string,
+    categoryId: string | null
+  ): Promise<FaqCandidate[]> {
+    try {
+      const embedding = await this.dependencies.embeddings.embed(normalizedQuestion);
+      return await this.dependencies.search.findSemantic(embedding, categoryId, 8);
+    } catch {
+      return [];
+    }
   }
 
   private async persist(
@@ -174,7 +197,8 @@ function toCachedAnswer(decision: RetrievalDecision): CachedAnswer {
 function toResponse(
   interactionId: string,
   result: CachedAnswer,
-  displayedAnswer: string | null
+  displayedAnswer: string | null,
+  displayedMessage: string | null
 ): AskQuestionResponse {
   if (result.status === "answered" && result.candidate) {
     return {
@@ -197,6 +221,19 @@ function toResponse(
   return {
     interactionId,
     status: "unanswered",
-    message: "Ainda não encontrei uma resposta aprovada para essa pergunta."
+    message:
+      displayedMessage ??
+      "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
   };
+}
+
+function mergeCandidates(...groups: FaqCandidate[][]): FaqCandidate[] {
+  const strongestByFaq = new Map<string, FaqCandidate>();
+  for (const candidate of groups.flat()) {
+    const current = strongestByFaq.get(candidate.id);
+    if (!current || candidate.confidence > current.confidence) {
+      strongestByFaq.set(candidate.id, candidate);
+    }
+  }
+  return [...strongestByFaq.values()].sort((left, right) => right.confidence - left.confidence);
 }

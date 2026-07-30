@@ -60,18 +60,47 @@ export class PostgresFaqSearch implements FaqSearch {
     limit: number
   ): Promise<FaqCandidate[]> {
     const result = await this.pool.query<CandidateRow>(
-      `SELECT f.id, f.canonical_question, f.answer,
-              c.id AS category_id, c.name AS category_name,
-              LEAST(0.77, ts_rank_cd(
-                to_tsvector('portuguese', f.canonical_question),
-                websearch_to_tsquery('portuguese', $1)
-              )) AS confidence
-       FROM faqs f
-       JOIN categories c ON c.id = f.category_id
-       WHERE f.status = 'active'
-         AND to_tsvector('portuguese', f.canonical_question)
-             @@ websearch_to_tsquery('portuguese', $1)
-         AND ($2::uuid IS NULL OR f.category_id = $2)
+      `WITH searchable_faqs AS (
+         SELECT f.id, f.canonical_question, f.answer,
+                c.id AS category_id, c.name AS category_name,
+                concat_ws(
+                  ' ',
+                  f.canonical_question,
+                  f.answer,
+                  string_agg(a.phrase, ' ')
+                ) AS searchable_text
+         FROM faqs f
+         JOIN categories c ON c.id = f.category_id
+         LEFT JOIN faq_aliases a ON a.faq_id = f.id
+         WHERE f.status = 'active'
+           AND ($2::uuid IS NULL OR f.category_id = $2)
+         GROUP BY f.id, c.id, c.name
+       ),
+       ranked AS (
+         SELECT *,
+                ts_rank_cd(
+                  to_tsvector('portuguese', unaccent(searchable_text)),
+                  websearch_to_tsquery('portuguese', unaccent($1))
+                ) AS text_rank,
+                word_similarity(
+                  lower(unaccent($1)),
+                  lower(unaccent(searchable_text))
+                ) AS fuzzy_score
+         FROM searchable_faqs
+       )
+       SELECT id, canonical_question, answer, category_id, category_name,
+              LEAST(
+                0.84,
+                GREATEST(
+                  CASE WHEN text_rank > 0 THEN 0.72 + LEAST(0.12, text_rank) ELSE 0 END,
+                  CASE WHEN fuzzy_score >= 0.25
+                    THEN 0.65 + LEAST(0.19, fuzzy_score * 0.2)
+                    ELSE 0
+                  END
+                )
+              ) AS confidence
+       FROM ranked
+       WHERE text_rank > 0 OR fuzzy_score >= 0.25
        ORDER BY confidence DESC
        LIMIT $3`,
       [normalizedQuestion, categoryId, limit]

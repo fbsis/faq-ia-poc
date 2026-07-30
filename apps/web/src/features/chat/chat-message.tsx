@@ -1,5 +1,6 @@
 import type { AskQuestionResponse } from "@faq/contracts";
 import { Bot, CheckCircle2, HelpCircle, UserRound } from "lucide-react";
+import { MarkdownMessage } from "./markdown-message.js";
 
 export function ChatMessage({ result }: { result: AskQuestionResponse }) {
   const answered = result.status === "answered";
@@ -24,11 +25,7 @@ export function ChatMessage({ result }: { result: AskQuestionResponse }) {
               </span>
             ) : null}
           </div>
-          {result.answer ? (
-            <p className="leading-7 text-slate-800">{result.answer}</p>
-          ) : (
-            <p className="leading-7 text-slate-700">{result.message}</p>
-          )}
+          <MarkdownMessage>{result.answer ?? result.message}</MarkdownMessage>
           {result.suggestions?.map((suggestion) => (
             <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm" key={suggestion}>
               {suggestion}

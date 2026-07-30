@@ -182,7 +182,11 @@ async function createTestResources(environment: Environment): Promise<Resources>
 
 const deterministicConversationAgent: ConversationAgent = {
   rewriteQuestion: (question) => Promise.resolve(question),
-  createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer)
+  createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer),
+  createUnansweredResponse: () =>
+    Promise.resolve(
+      "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
+    )
 };
 
 class MemoryAuthRepository implements AdminRepository, SessionRepository {
