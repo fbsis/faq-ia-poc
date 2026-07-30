@@ -22,20 +22,20 @@ and tested as an independent increment after the shared foundation is complete.
 **Purpose**: Initialize the pnpm monorepo, applications, shared packages, containers, and quality
 tooling.
 
-- [ ] T001 Create the pnpm workspace and root scripts in `package.json` and `pnpm-workspace.yaml`
-- [ ] T002 Create workspace manifests with pinned runtime dependencies in `apps/api/package.json`, `apps/web/package.json`, `packages/contracts/package.json`, `packages/ui/package.json`, and `packages/config/package.json`
-- [ ] T003 [P] Configure strict shared TypeScript and ESM settings in `tsconfig.json` and `packages/config/tsconfig/*.json`
-- [ ] T004 [P] Configure ESLint, Prettier, and import-boundary rules in `eslint.config.js`, `prettier.config.js`, and `.prettierignore`
-- [ ] T005 [P] Configure Vitest projects and constitution coverage thresholds in `vitest.workspace.ts`, `apps/api/vitest.config.ts`, and `apps/web/vitest.config.ts`
-- [ ] T006 [P] Create the API entry-point and process command skeletons in `apps/api/src/app.ts`, `apps/api/src/commands/start-api.ts`, `apps/api/src/commands/start-worker.ts`, and `apps/api/src/commands/relay-outbox.ts`
-- [ ] T007 [P] Create the React/Vite application shell in `apps/web/index.html`, `apps/web/vite.config.ts`, `apps/web/src/main.tsx`, and `apps/web/src/app/router.tsx`
-- [ ] T008 [P] Create shared contract and configuration package entry-points in `packages/contracts/src/index.ts` and `packages/config/src/index.ts`
-- [ ] T009 [P] Configure Tailwind and the shadcn/ui workspace in `apps/web/tailwind.config.ts`, `apps/web/components.json`, `packages/ui/components.json`, and `packages/ui/src/index.ts`
-- [ ] T010 [P] Document environment variables and exclude local secrets and artifacts in `.env.example`, `.gitignore`, and `.dockerignore`
-- [ ] T011 Create the development topology with PostgreSQL/pgvector, cache Redis, queue Redis, API, web, relay, and worker in `compose.yaml`
-- [ ] T012 [P] Create multi-stage non-root application images and the static web server configuration in `docker/api.Dockerfile`, `docker/web.Dockerfile`, and `docker/web-server.conf`
-- [ ] T013 Create the optimized production topology, health checks, persistence, and restricted ingress settings in `compose.production.yaml`
-- [ ] T014 [P] Add pull-request quality and image-build gates in `.github/workflows/ci.yml`
+- [X] T001 Create the pnpm workspace and root scripts in `package.json` and `pnpm-workspace.yaml`
+- [X] T002 Create workspace manifests with pinned runtime dependencies in `apps/api/package.json`, `apps/web/package.json`, `packages/contracts/package.json`, `packages/ui/package.json`, and `packages/config/package.json`
+- [X] T003 [P] Configure strict shared TypeScript and ESM settings in `tsconfig.json` and `packages/config/tsconfig/*.json`
+- [X] T004 [P] Configure ESLint, Prettier, and import-boundary rules in `eslint.config.js`, `prettier.config.js`, and `.prettierignore`
+- [X] T005 [P] Configure Vitest projects and constitution coverage thresholds in `vitest.workspace.ts`, `apps/api/vitest.config.ts`, and `apps/web/vitest.config.ts`
+- [X] T006 [P] Create the API entry-point and process command skeletons in `apps/api/src/app.ts`, `apps/api/src/commands/start-api.ts`, `apps/api/src/commands/start-worker.ts`, and `apps/api/src/commands/relay-outbox.ts`
+- [X] T007 [P] Create the React/Vite application shell in `apps/web/index.html`, `apps/web/vite.config.ts`, `apps/web/src/main.tsx`, and `apps/web/src/app/router.tsx`
+- [X] T008 [P] Create shared contract and configuration package entry-points in `packages/contracts/src/index.ts` and `packages/config/src/index.ts`
+- [X] T009 [P] Configure Tailwind and the shadcn/ui workspace in `apps/web/tailwind.config.ts`, `apps/web/components.json`, `packages/ui/components.json`, and `packages/ui/src/index.ts`
+- [X] T010 [P] Document environment variables and exclude local secrets and artifacts in `.env.example`, `.gitignore`, and `.dockerignore`
+- [X] T011 Create the development topology with PostgreSQL/pgvector, cache Redis, queue Redis, API, web, relay, and worker in `compose.yaml`
+- [X] T012 [P] Create multi-stage non-root application images and the static web server configuration in `docker/api.Dockerfile`, `docker/web.Dockerfile`, and `docker/web-server.conf`
+- [X] T013 Create the optimized production topology, health checks, persistence, and restricted ingress settings in `compose.production.yaml`
+- [X] T014 [P] Add pull-request quality and image-build gates in `.github/workflows/ci.yml`
 
 **Checkpoint**: Workspaces install from one lockfile, development services are declared, and all root
 quality commands resolve.
@@ -51,34 +51,34 @@ fixtures required by every user story.
 
 ### Foundation Tests
 
-- [ ] T015 [P] Add deterministic clock, ID, password, embedding, cache, and repository fakes in `apps/api/tests/helpers/fakes.ts`
-- [ ] T016 [P] Add PostgreSQL/pgvector and isolated Redis Testcontainers fixtures in `apps/api/tests/helpers/test-environment.ts`
-- [ ] T017 [P] Add shared error-envelope and pagination contract tests in `packages/contracts/src/common.test.ts`
-- [ ] T018 [P] Add admin authentication and session use-case unit tests in `apps/api/tests/unit/auth/auth-use-cases.test.ts`
-- [ ] T019 [P] Add authentication repository and session-expiry integration tests in `apps/api/tests/integration/auth/postgres-auth.test.ts`
-- [ ] T020 [P] Add login, session, logout, CSRF, and throttling HTTP contract tests in `apps/api/tests/contract/auth.routes.test.ts`
-- [ ] T021 [P] Add protected-route and login-form behavior tests in `apps/web/tests/integration/auth/auth-flow.test.tsx`
+- [X] T015 [P] Add deterministic clock, ID, password, embedding, cache, and repository fakes in `apps/api/tests/helpers/fakes.ts`
+- [X] T016 [P] Add PostgreSQL/pgvector and isolated Redis Testcontainers fixtures in `apps/api/tests/helpers/test-environment.ts`
+- [X] T017 [P] Add shared error-envelope and pagination contract tests in `packages/contracts/src/common.test.ts`
+- [X] T018 [P] Add admin authentication and session use-case unit tests in `apps/api/tests/unit/auth/auth-use-cases.test.ts`
+- [X] T019 [P] Add authentication repository and session-expiry integration tests in `apps/api/tests/integration/auth/postgres-auth.test.ts`
+- [X] T020 [P] Add login, session, logout, CSRF, and throttling HTTP contract tests in `apps/api/tests/contract/auth.routes.test.ts`
+- [X] T021 [P] Add protected-route and login-form behavior tests in `apps/web/tests/integration/auth/auth-flow.test.tsx`
 
 ### Foundation Implementation
 
-- [ ] T022 Define common error, pagination, identifier, and date-range Zod schemas in `packages/contracts/src/common.ts`
-- [ ] T023 [P] Implement typed environment loading and secret validation in `apps/api/src/infrastructure/config/environment.ts`
-- [ ] T024 [P] Implement request IDs, structured logging, error mapping, and safe redaction in `apps/api/src/infrastructure/http/observability.ts` and `apps/api/src/infrastructure/http/errors.ts`
-- [ ] T025 [P] Define shared domain clock, ID, hashing, and transaction ports in `apps/api/src/shared/domain/ports.ts`
-- [ ] T026 Enable pgvector and create all versioned tables, constraints, indexes, and rollback notes in `apps/api/src/infrastructure/database/migrations/0001_initial_schema.sql`
-- [ ] T027 Map Category, FAQ, Alias, Interaction, KnowledgeGap, Resolution, Event, Outbox, Admin, Session, and KnowledgeBaseState tables in `apps/api/src/infrastructure/database/schema.ts`
-- [ ] T028 Implement PostgreSQL connection, transaction, and migration runners in `apps/api/src/infrastructure/database/client.ts` and `apps/api/src/infrastructure/database/migrate.ts`
-- [ ] T029 [P] Configure separate fail-fast cache and durable queue Redis connections in `apps/api/src/infrastructure/redis/connections.ts`
-- [ ] T030 [P] Define queue names, identifier-only payload schemas, retry policy, retention, concurrency, and limiter settings in `apps/api/src/infrastructure/queue/config.ts`
-- [ ] T031 Define Admin and AdminSession domain rules and ports in `apps/api/src/modules/auth/domain/admin.ts` and `apps/api/src/modules/auth/application/ports.ts`
-- [ ] T032 [P] Implement secure password hashing and verification in `apps/api/src/modules/auth/adapters/outbound/password-hasher.ts`
-- [ ] T033 Implement PostgreSQL admin and server-session repositories in `apps/api/src/modules/auth/adapters/outbound/postgres-auth-repository.ts`
-- [ ] T034 Implement login, get-session, and logout use cases in `apps/api/src/modules/auth/application/login.ts`, `apps/api/src/modules/auth/application/get-session.ts`, and `apps/api/src/modules/auth/application/logout.ts`
-- [ ] T035 Implement secure cookies, CSRF enforcement, administrator authorization, and login throttling in `apps/api/src/modules/auth/adapters/inbound/http/auth-plugin.ts`
-- [ ] T036 Expose the authentication contract routes in `apps/api/src/modules/auth/adapters/inbound/http/auth-routes.ts`
-- [ ] T037 [P] Implement browser credential, CSRF, and typed error handling in `apps/web/src/shared/api/http-client.ts`
-- [ ] T038 Implement authentication state, protected routing, and login UI in `apps/web/src/features/auth/use-session.ts`, `apps/web/src/features/auth/protected-route.tsx`, and `apps/web/src/features/auth/login-page.tsx`
-- [ ] T039 Compose database, Redis, authentication, health, and graceful shutdown infrastructure in `apps/api/src/bootstrap/build-application.ts`
+- [X] T022 Define common error, pagination, identifier, and date-range Zod schemas in `packages/contracts/src/common.ts`
+- [X] T023 [P] Implement typed environment loading and secret validation in `apps/api/src/infrastructure/config/environment.ts`
+- [X] T024 [P] Implement request IDs, structured logging, error mapping, and safe redaction in `apps/api/src/infrastructure/http/observability.ts` and `apps/api/src/infrastructure/http/errors.ts`
+- [X] T025 [P] Define shared domain clock, ID, hashing, and transaction ports in `apps/api/src/shared/domain/ports.ts`
+- [X] T026 Enable pgvector and create all versioned tables, constraints, indexes, and rollback notes in `apps/api/src/infrastructure/database/migrations/0001_initial_schema.sql`
+- [X] T027 Map Category, FAQ, Alias, Interaction, KnowledgeGap, Resolution, Event, Outbox, Admin, Session, and KnowledgeBaseState tables in `apps/api/src/infrastructure/database/schema.ts`
+- [X] T028 Implement PostgreSQL connection, transaction, and migration runners in `apps/api/src/infrastructure/database/client.ts` and `apps/api/src/infrastructure/database/migrate.ts`
+- [X] T029 [P] Configure separate fail-fast cache and durable queue Redis connections in `apps/api/src/infrastructure/redis/connections.ts`
+- [X] T030 [P] Define queue names, identifier-only payload schemas, retry policy, retention, concurrency, and limiter settings in `apps/api/src/infrastructure/queue/config.ts`
+- [X] T031 Define Admin and AdminSession domain rules and ports in `apps/api/src/modules/auth/domain/admin.ts` and `apps/api/src/modules/auth/application/ports.ts`
+- [X] T032 [P] Implement secure password hashing and verification in `apps/api/src/modules/auth/adapters/outbound/password-hasher.ts`
+- [X] T033 Implement PostgreSQL admin and server-session repositories in `apps/api/src/modules/auth/adapters/outbound/postgres-auth-repository.ts`
+- [X] T034 Implement login, get-session, and logout use cases in `apps/api/src/modules/auth/application/login.ts`, `apps/api/src/modules/auth/application/get-session.ts`, and `apps/api/src/modules/auth/application/logout.ts`
+- [X] T035 Implement secure cookies, CSRF enforcement, administrator authorization, and login throttling in `apps/api/src/modules/auth/adapters/inbound/http/auth-plugin.ts`
+- [X] T036 Expose the authentication contract routes in `apps/api/src/modules/auth/adapters/inbound/http/auth-routes.ts`
+- [X] T037 [P] Implement browser credential, CSRF, and typed error handling in `apps/web/src/shared/api/http-client.ts`
+- [X] T038 Implement authentication state, protected routing, and login UI in `apps/web/src/features/auth/use-session.ts`, `apps/web/src/features/auth/protected-route.tsx`, and `apps/web/src/features/auth/login-page.tsx`
+- [X] T039 Compose database, Redis, authentication, health, and graceful shutdown infrastructure in `apps/api/src/bootstrap/build-application.ts`
 
 **Checkpoint**: Migrations run on pgvector, administrators can authenticate through protected
 sessions, and the shared test environment is green.
@@ -96,32 +96,32 @@ interaction records.
 
 ### Tests for User Story 1
 
-- [ ] T040 [P] [US1] Add ask-question request and response schema tests in `packages/contracts/src/chat.test.ts`
-- [ ] T041 [P] [US1] Add normalization, cache-key, exact-match, and threshold-boundary unit tests in `apps/api/tests/unit/chat/retrieval-policy.test.ts`
-- [ ] T042 [P] [US1] Add answered, ambiguous, cache-hit, cache-miss, and cache-fail-open use-case tests in `apps/api/tests/unit/chat/ask-question.test.ts`
-- [ ] T043 [P] [US1] Add pgvector cosine ordering, active-status, category, exact, and full-text fallback tests in `apps/api/tests/integration/chat/postgres-faq-search.test.ts`
-- [ ] T044 [P] [US1] Add positive TTL, knowledge-version invalidation, and Redis-outage cache tests in `apps/api/tests/integration/chat/redis-answer-cache.test.ts`
-- [ ] T045 [P] [US1] Add `POST /api/v1/chat/questions` validation and response contract tests in `apps/api/tests/contract/chat.routes.test.ts`
-- [ ] T046 [P] [US1] Add chat input, pending, answered, retry, and accessibility behavior tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
+- [X] T040 [P] [US1] Add ask-question request and response schema tests in `packages/contracts/src/chat.test.ts`
+- [X] T041 [P] [US1] Add normalization, cache-key, exact-match, and threshold-boundary unit tests in `apps/api/tests/unit/chat/retrieval-policy.test.ts`
+- [X] T042 [P] [US1] Add answered, ambiguous, cache-hit, cache-miss, and cache-fail-open use-case tests in `apps/api/tests/unit/chat/ask-question.test.ts`
+- [X] T043 [P] [US1] Add pgvector cosine ordering, active-status, category, exact, and full-text fallback tests in `apps/api/tests/integration/chat/postgres-faq-search.test.ts`
+- [X] T044 [P] [US1] Add positive TTL, knowledge-version invalidation, and Redis-outage cache tests in `apps/api/tests/integration/chat/redis-answer-cache.test.ts`
+- [X] T045 [P] [US1] Add `POST /api/v1/chat/questions` validation and response contract tests in `apps/api/tests/contract/chat.routes.test.ts`
+- [X] T046 [P] [US1] Add chat input, pending, answered, retry, and accessibility behavior tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T047 [P] [US1] Define ask-question Zod contracts and exported TypeScript types in `packages/contracts/src/chat.ts`
-- [ ] T048 [P] [US1] Define immutable Interaction and FAQ candidate domain types in `apps/api/src/modules/chat/domain/interaction.ts` and `apps/api/src/modules/chat/domain/faq-candidate.ts`
-- [ ] T049 [P] [US1] Declare FAQ search, embedding, answer-cache, interaction, and knowledge-version ports in `apps/api/src/modules/chat/application/ports.ts`
-- [ ] T050 [P] [US1] Implement deterministic Portuguese-safe normalization and hashed versioned cache keys in `apps/api/src/modules/chat/domain/normalize-question.ts` and `apps/api/src/modules/chat/domain/answer-cache-key.ts`
-- [ ] T051 [P] [US1] Implement exact, accepted, ambiguous, and unanswered ranking decisions in `apps/api/src/modules/chat/domain/retrieval-policy.ts`
-- [ ] T052 [P] [US1] Implement the OpenAI embedding adapter with bounded timeout and safe retry in `apps/api/src/modules/chat/adapters/outbound/openai-embedding-provider.ts`
-- [ ] T053 [P] [US1] Implement active FAQ exact, HNSW cosine, and full-text retrieval in `apps/api/src/modules/chat/adapters/outbound/postgres-faq-search.ts`
-- [ ] T054 [P] [US1] Implement immutable interaction persistence in `apps/api/src/modules/chat/adapters/outbound/postgres-interaction-repository.ts`
-- [ ] T055 [P] [US1] Implement fail-open positive and short negative cache access in `apps/api/src/modules/chat/adapters/outbound/redis-answer-cache.ts`
-- [ ] T056 [US1] Implement answered and ambiguous retrieval orchestration in `apps/api/src/modules/chat/application/ask-question.ts`
-- [ ] T057 [US1] Expose validation, errors, and `POST /api/v1/chat/questions` in `apps/api/src/modules/chat/adapters/inbound/http/chat-routes.ts`
-- [ ] T058 [P] [US1] Implement the typed public chat API adapter in `apps/web/src/features/chat/chat-api.ts`
-- [ ] T059 [US1] Implement mutation lifecycle and retry behavior in `apps/web/src/features/chat/use-ask-question.ts`
-- [ ] T060 [P] [US1] Build accessible chat composer and message components with shadcn/ui in `apps/web/src/features/chat/chat-composer.tsx` and `apps/web/src/features/chat/chat-message.tsx`
-- [ ] T061 [US1] Assemble the public chat page and route in `apps/web/src/features/chat/chat-page.tsx` and `apps/web/src/app/router.tsx`
-- [ ] T062 [US1] Add deterministic category, FAQ, embedding, and answered-interaction seed data in `apps/api/src/infrastructure/database/seed.ts`
+- [X] T047 [P] [US1] Define ask-question Zod contracts and exported TypeScript types in `packages/contracts/src/chat.ts`
+- [X] T048 [P] [US1] Define immutable Interaction and FAQ candidate domain types in `apps/api/src/modules/chat/domain/interaction.ts` and `apps/api/src/modules/chat/domain/faq-candidate.ts`
+- [X] T049 [P] [US1] Declare FAQ search, embedding, answer-cache, interaction, and knowledge-version ports in `apps/api/src/modules/chat/application/ports.ts`
+- [X] T050 [P] [US1] Implement deterministic Portuguese-safe normalization and hashed versioned cache keys in `apps/api/src/modules/chat/domain/normalize-question.ts` and `apps/api/src/modules/chat/domain/answer-cache-key.ts`
+- [X] T051 [P] [US1] Implement exact, accepted, ambiguous, and unanswered ranking decisions in `apps/api/src/modules/chat/domain/retrieval-policy.ts`
+- [X] T052 [P] [US1] Implement the OpenAI embedding adapter with bounded timeout and safe retry in `apps/api/src/modules/chat/adapters/outbound/openai-embedding-provider.ts`
+- [X] T053 [P] [US1] Implement active FAQ exact, HNSW cosine, and full-text retrieval in `apps/api/src/modules/chat/adapters/outbound/postgres-faq-search.ts`
+- [X] T054 [P] [US1] Implement immutable interaction persistence in `apps/api/src/modules/chat/adapters/outbound/postgres-interaction-repository.ts`
+- [X] T055 [P] [US1] Implement fail-open positive and short negative cache access in `apps/api/src/modules/chat/adapters/outbound/redis-answer-cache.ts`
+- [X] T056 [US1] Implement answered and ambiguous retrieval orchestration in `apps/api/src/modules/chat/application/ask-question.ts`
+- [X] T057 [US1] Expose validation, errors, and `POST /api/v1/chat/questions` in `apps/api/src/modules/chat/adapters/inbound/http/chat-routes.ts`
+- [X] T058 [P] [US1] Implement the typed public chat API adapter in `apps/web/src/features/chat/chat-api.ts`
+- [X] T059 [US1] Implement mutation lifecycle and retry behavior in `apps/web/src/features/chat/use-ask-question.ts`
+- [X] T060 [P] [US1] Build accessible chat composer and message components with shadcn/ui in `apps/web/src/features/chat/chat-composer.tsx` and `apps/web/src/features/chat/chat-message.tsx`
+- [X] T061 [US1] Assemble the public chat page and route in `apps/web/src/features/chat/chat-page.tsx` and `apps/web/src/app/router.tsx`
+- [X] T062 [US1] Add deterministic category, FAQ, embedding, and answered-interaction seed data in `apps/api/src/infrastructure/database/seed.ts`
 
 **Checkpoint**: The answered-chat MVP works without the administration or analytics stories and
 never generates answer text.
