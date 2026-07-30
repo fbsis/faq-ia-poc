@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDatabasePool } from "../../../src/infrastructure/database/client.js";
+import {
+  createDatabasePool,
+  type DatabasePool
+} from "../../../src/infrastructure/database/client.js";
 import { runMigrations } from "../../../src/infrastructure/database/migrate.js";
 import { PostgresAuthRepository } from "../../../src/modules/auth/adapters/outbound/postgres-auth-repository.js";
 import { startTestEnvironment, type TestEnvironment } from "../../helpers/test-environment.js";
@@ -8,16 +11,24 @@ const integration = process.env.RUN_INTEGRATION === "true" ? describe : describe
 
 integration("PostgresAuthRepository", () => {
   let environment: TestEnvironment;
+  let pool: DatabasePool;
   let repository: PostgresAuthRepository;
 
   beforeAll(async () => {
     environment = await startTestEnvironment();
-    const pool = createDatabasePool(environment.databaseUrl);
+    pool = createDatabasePool(environment.databaseUrl);
     await runMigrations(pool);
+    await pool.query(
+      `INSERT INTO administrators
+       (id, email, display_name, password_hash, active)
+       VALUES ($1, 'admin@example.com', 'FAQ Admin', 'test-only-hash', true)`,
+      ["00000000-0000-4000-8000-000000000002"]
+    );
     repository = new PostgresAuthRepository(pool);
   }, 120_000);
 
   afterAll(async () => {
+    await pool?.end();
     await environment?.stop();
   });
 

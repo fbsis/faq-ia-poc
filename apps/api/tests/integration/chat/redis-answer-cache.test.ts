@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Redis } from "ioredis";
 import { createCacheRedis } from "../../../src/infrastructure/redis/connections.js";
 import { RedisAnswerCache } from "../../../src/modules/chat/adapters/outbound/redis-answer-cache.js";
 import { startTestEnvironment, type TestEnvironment } from "../../helpers/test-environment.js";
@@ -7,16 +8,20 @@ const integration = process.env.RUN_INTEGRATION === "true" ? describe : describe
 
 integration("RedisAnswerCache", () => {
   let environment: TestEnvironment;
+  let redis: Redis;
   let cache: RedisAnswerCache;
 
   beforeAll(async () => {
     environment = await startTestEnvironment();
-    const redis = createCacheRedis(environment.cacheRedisUrl);
+    redis = createCacheRedis(environment.cacheRedisUrl);
     await redis.connect();
     cache = new RedisAnswerCache(redis, { positiveTtlSeconds: 900, negativeTtlSeconds: 120 });
   }, 120_000);
 
-  afterAll(async () => environment?.stop());
+  afterAll(async () => {
+    await redis?.quit();
+    await environment?.stop();
+  });
 
   it("stores a positive answer under its knowledge-versioned key", async () => {
     const value = {
