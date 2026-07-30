@@ -1,6 +1,7 @@
 import {
   errorEnvelopeSchema,
   gapResolutionSchema,
+  knowledgeGapSchema,
   knowledgeGapPageSchema,
   type KnowledgeGapDetails
 } from "@faq/contracts";
@@ -98,7 +99,62 @@ describe("knowledge gap HTTP contract", () => {
     });
     await app.close();
   });
+
+  it("dismisses and reopens a gap through protected idempotent actions", async () => {
+    const knowledgeGap = openKnowledgeGap();
+    const app = await buildApplication({
+      mode: "test",
+      testOverrides: { knowledgeGap }
+    });
+    const auth = await login(app);
+    const dismissedResponse = await app.inject({
+      method: "POST",
+      url: `/api/v1/knowledge-gaps/${knowledgeGap.id}/dismiss`,
+      headers: { ...auth, "idempotency-key": "dismiss-request-1" },
+      payload: {
+        reason: "Não pertence ao escopo do atendimento.",
+        expectedVersion: knowledgeGap.version
+      }
+    });
+
+    expect(dismissedResponse.statusCode).toBe(200);
+    const dismissed = knowledgeGapSchema.parse(dismissedResponse.json());
+    expect(dismissed).toMatchObject({ status: "dismissed", version: 3 });
+
+    const reopenedResponse = await app.inject({
+      method: "POST",
+      url: `/api/v1/knowledge-gaps/${knowledgeGap.id}/reopen`,
+      headers: { ...auth, "idempotency-key": "reopen-request-1" },
+      payload: {
+        reason: "A dúvida voltou a ser relevante.",
+        expectedVersion: dismissed.version
+      }
+    });
+
+    expect(reopenedResponse.statusCode).toBe(200);
+    expect(knowledgeGapSchema.parse(reopenedResponse.json())).toMatchObject({
+      status: "open",
+      version: 4
+    });
+    await app.close();
+  });
 });
+
+function openKnowledgeGap(): KnowledgeGapDetails {
+  return {
+    id: "00000000-0000-4000-8000-000000000101",
+    representativeQuestion: "Como emitir a segunda via?",
+    status: "open",
+    occurrenceCount: 2,
+    firstOccurredAt: "2026-07-29T12:00:00.000Z",
+    lastOccurredAt: "2026-07-30T12:00:00.000Z",
+    version: 2,
+    createdAt: "2026-07-29T12:00:00.000Z",
+    updatedAt: "2026-07-30T12:00:00.000Z",
+    occurrences: [],
+    events: []
+  };
+}
 
 async function login(app: Awaited<ReturnType<typeof buildApplication>>) {
   const response = await app.inject({

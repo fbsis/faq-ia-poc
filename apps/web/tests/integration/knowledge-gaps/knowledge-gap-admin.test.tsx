@@ -92,4 +92,36 @@ describe("knowledge gap administration", () => {
 
     expect(await screen.findByText(/nenhuma pergunta sem resposta/i)).toBeVisible();
   });
+
+  it("dismisses an open gap with a reason and then offers reopening", async () => {
+    let currentGap = { ...gap };
+    server.use(
+      http.get("/api/v1/knowledge-gaps", () =>
+        HttpResponse.json({ items: [currentGap], page: 1, pageSize: 20, total: 1 })
+      ),
+      http.get(`/api/v1/knowledge-gaps/${gap.id}`, () =>
+        HttpResponse.json({ ...currentGap, occurrences: [], events: [] })
+      ),
+      http.post(`/api/v1/knowledge-gaps/${gap.id}/dismiss`, async ({ request }) => {
+        expect(request.headers.get("idempotency-key")).toBeTruthy();
+        expect(await request.json()).toEqual({
+          reason: "Não pertence ao escopo do atendimento.",
+          expectedVersion: 2
+        });
+        currentGap = { ...currentGap, status: "dismissed", version: 3 };
+        return HttpResponse.json(currentGap);
+      })
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: /ver detalhes/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /descartar pendência/i }));
+    await userEvent.type(
+      screen.getByLabelText(/justificativa do descarte/i),
+      "Não pertence ao escopo do atendimento."
+    );
+    await userEvent.click(screen.getByRole("button", { name: /confirmar descarte/i }));
+
+    expect(await screen.findByRole("button", { name: /reabrir pendência/i })).toBeVisible();
+  });
 });
