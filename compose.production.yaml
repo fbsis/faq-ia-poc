@@ -1,0 +1,82 @@
+name: faq-intelligence-production
+
+x-api: &api
+  image: faq-intelligence-api:latest
+  build:
+    context: .
+    dockerfile: docker/api.Dockerfile
+    target: production
+  env_file: [.env.production]
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis-cache: { condition: service_healthy }
+    redis-queue: { condition: service_healthy }
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:8-alpine
+    command:
+      ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [queue-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    <<: *api
+    ports: ["127.0.0.1:3000:3000"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  relay:
+    <<: *api
+    command: ["node", "dist/commands/relay-outbox.js"]
+
+  worker:
+    <<: *api
+    command: ["node", "dist/commands/start-worker.js"]
+
+  web:
+    image: faq-intelligence-web:latest
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: production
+    ports: ["8080:8080"]
+    restart: unless-stopped
+    depends_on: [api]
+
+volumes:
+  postgres-data:
+  queue-data:

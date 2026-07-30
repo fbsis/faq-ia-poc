@@ -1,0 +1,104 @@
+name: faq-intelligence
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: faq
+      POSTGRES_USER: faq
+      POSTGRES_PASSWORD: faq
+    ports: ["5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faq -d faq"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis-cache:
+    image: redis:8-alpine
+    command:
+      ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "allkeys-lru"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis-queue:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["6380:6379"]
+    volumes: [queue-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: development
+    command: ["pnpm", "--filter", "@faq/api", "dev"]
+    env_file: [.env]
+    ports: ["3000:3000"]
+    volumes:
+      - .:/workspace
+      - api-node-modules:/workspace/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-cache: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: development
+    command: ["pnpm", "--filter", "@faq/web", "dev"]
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+    ports: ["5173:5173"]
+    volumes:
+      - .:/workspace
+      - web-node-modules:/workspace/node_modules
+    depends_on: [api]
+
+  relay:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: development
+    command: ["pnpm", "--filter", "@faq/api", "start:relay"]
+    env_file: [.env]
+    volumes:
+      - .:/workspace
+      - relay-node-modules:/workspace/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: development
+    command: ["pnpm", "--filter", "@faq/api", "start:worker"]
+    env_file: [.env]
+    volumes:
+      - .:/workspace
+      - worker-node-modules:/workspace/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  queue-data:
+  api-node-modules:
+  web-node-modules:
+  relay-node-modules:
+  worker-node-modules:

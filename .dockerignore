@@ -1,0 +1,16 @@
+.git
+.github
+.agents
+.specify
+specs
+docs
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
