@@ -5,6 +5,8 @@ const environmentSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     HOST: z.string().default("0.0.0.0"),
     PORT: z.coerce.number().int().positive().default(3000),
+    HTTP_BODY_LIMIT_BYTES: z.coerce.number().int().min(1_024).default(32_768),
+    CHAT_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
     DATABASE_URL: z.string().url().default("postgres://faq:faq@localhost:5432/faq"),
     CACHE_REDIS_URL: z.string().url().default("redis://localhost:6379"),
     QUEUE_REDIS_URL: z.string().url().default("redis://localhost:6380"),

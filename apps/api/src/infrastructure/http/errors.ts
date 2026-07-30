@@ -32,6 +32,24 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
+    const statusCode =
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof error.statusCode === "number"
+        ? error.statusCode
+        : null;
+    if (statusCode === 413 || statusCode === 429) {
+      return reply.status(statusCode).send({
+        code: statusCode === 413 ? "PAYLOAD_TOO_LARGE" : "RATE_LIMITED",
+        message:
+          statusCode === 413
+            ? "The request payload is too large."
+            : "Too many requests. Please try again later.",
+        requestId: request.id
+      });
+    }
+
     request.log.error({ err: error }, "request failed");
     return reply.status(500).send({
       code: "INTERNAL_ERROR",

@@ -16,6 +16,12 @@ import { createDatabasePool } from "../infrastructure/database/client.js";
 import { loadEnvironment, type Environment } from "../infrastructure/config/environment.js";
 import { registerErrorHandler } from "../infrastructure/http/errors.js";
 import { observabilityOptions } from "../infrastructure/http/observability.js";
+import { registerSecurityHeaders } from "../infrastructure/http/security.js";
+import {
+  MetricsRegistry,
+  registerHttpMetrics,
+  registerMetricsRoute
+} from "../infrastructure/observability/metrics.js";
 import { createCacheRedis, createQueueRedis } from "../infrastructure/redis/connections.js";
 import { registerBullBoard } from "../infrastructure/queue/bull-board.js";
 import { GetSession } from "../modules/auth/application/get-session.js";
@@ -89,7 +95,10 @@ export interface BuildApplicationOptions {
   };
 }
 
-export type Application = FastifyInstance & { environment: Environment };
+export type Application = FastifyInstance & {
+  environment: Environment;
+  metrics: MetricsRegistry;
+};
 
 export async function buildApplication(
   options: BuildApplicationOptions = {}
@@ -107,8 +116,14 @@ export async function buildApplication(
           }
         : process.env
     );
-  const app = Fastify(observabilityOptions()) as unknown as Application;
+  const app = Fastify({
+    ...observabilityOptions(),
+    bodyLimit: environment.HTTP_BODY_LIMIT_BYTES
+  }) as unknown as Application;
   app.environment = environment;
+  app.metrics = new MetricsRegistry();
+  registerHttpMetrics(app, app.metrics);
+  registerSecurityHeaders(app, environment);
 
   await app.register(cookie, { secret: environment.SESSION_SECRET });
   await app.register(cors, {
@@ -174,7 +189,7 @@ export async function buildApplication(
   });
 
   registerAuthRoutes(app, { environment, login, getSession, logout });
-  registerChatRoutes(app, askQuestion);
+  registerChatRoutes(app, askQuestion, { rateLimitMax: environment.CHAT_RATE_LIMIT_MAX });
   registerAnalyticsRoutes(app, { getSession, getAnalyticsSummary });
   registerFaqRoutes(app, { getSession, useCases: faqUseCases });
   registerKnowledgeGapRoutes(app, {
@@ -186,6 +201,7 @@ export async function buildApplication(
     dismissKnowledgeGap,
     reopenKnowledgeGap
   });
+  registerMetricsRoute(app, { getSession, metrics: app.metrics });
   await registerBullBoard(app, {
     getSession,
     environment,
