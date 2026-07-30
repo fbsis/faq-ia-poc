@@ -272,16 +272,16 @@ retry, concurrent requests, dismissal, and reopening preserve one auditable resu
 - [ ] T131 [P] [US5] Declare knowledge-gap query, command, audit, idempotency, and transaction ports in `apps/api/src/modules/knowledge-gaps/application/ports.ts`
 - [ ] T132 [US5] Implement filtered gap queries, derived occurrences, audit history, and row-locking commands in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-knowledge-gap-repository.ts`
 - [x] T133 [P] [US5] Implement list and detail use cases in `apps/api/src/modules/knowledge-gaps/application/list-knowledge-gaps.ts` and `apps/api/src/modules/knowledge-gaps/application/get-knowledge-gap.ts`
-- [ ] T134 [US5] Implement idempotent create-or-update resolution and transactional outbox creation in `apps/api/src/modules/knowledge-gaps/application/resolve-knowledge-gap.ts`
+- [x] T134 [US5] Implement idempotent create-or-update resolution and transactional outbox creation in `apps/api/src/modules/knowledge-gaps/application/resolve-knowledge-gap.ts`
 - [ ] T135 [P] [US5] Implement audited dismiss and reopen transitions in `apps/api/src/modules/knowledge-gaps/application/dismiss-knowledge-gap.ts` and `apps/api/src/modules/knowledge-gaps/application/reopen-knowledge-gap.ts`
 - [ ] T136 [P] [US5] Implement audited embedding retry eligibility in `apps/api/src/modules/knowledge-gaps/application/retry-gap-resolution.ts`
-- [ ] T137 [US5] Complete gap resolution or safely return it to open from the embedding worker in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
+- [x] T137 [US5] Complete gap resolution or safely return it to open from the embedding worker in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
 - [ ] T138 [US5] Expose authorized list, detail, resolve, dismiss, reopen, and retry endpoints in `apps/api/src/modules/knowledge-gaps/adapters/inbound/http/knowledge-gap-routes.ts`
 - [ ] T139 [US5] Mount authenticated, redacted, production-read-only Bull Board at `/admin/queues` in `apps/api/src/infrastructure/queue/bull-board.ts`
 - [ ] T140 [P] [US5] Implement typed gap APIs and query/mutation hooks in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-api.ts` and `apps/web/src/features/knowledge-gap-admin/use-knowledge-gaps.ts`
 - [ ] T141 [P] [US5] Build inbox filters, sort controls, status badges, and paginated list in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-list.tsx`
 - [x] T142 [P] [US5] Build occurrence details and append-only audit timeline in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-details.tsx` and `apps/web/src/features/knowledge-gap-admin/gap-audit-timeline.tsx`
-- [ ] T143 [P] [US5] Build create/update resolution form with pending, failed, retry, and conflict states in `apps/web/src/features/knowledge-gap-admin/resolve-gap-form.tsx`
+- [ ] T143 [P] [US5] Build the create/update resolution form, prefilled from the representative question and occurrence variants, with pending, failed, retry, and conflict states in `apps/web/src/features/knowledge-gap-admin/resolve-gap-form.tsx`
 - [ ] T144 [US5] Assemble protected inbox/detail routes with dismiss and reopen controls in `apps/web/src/features/knowledge-gap-admin/knowledge-gap-admin-page.tsx` and `apps/web/src/app/router.tsx`
 - [ ] T145 [US5] Add resolution, idempotency, concurrency, failure, dismiss, reopen, and Bull Board Playwright journeys in `tests/e2e/knowledge-gap-admin.spec.ts`
 
