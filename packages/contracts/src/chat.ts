@@ -1,10 +1,18 @@
 import { z } from "zod";
 import { identifierSchema } from "./common.js";
 
+export const conversationMessageSchema = z
+  .object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().trim().min(1).max(1000)
+  })
+  .strict();
+
 export const askQuestionRequestSchema = z
   .object({
     question: z.string().trim().min(1).max(500),
-    categoryId: identifierSchema.optional()
+    categoryId: identifierSchema.optional(),
+    history: z.array(conversationMessageSchema).max(6).optional()
   })
   .strict();
 
@@ -25,3 +33,4 @@ export const askQuestionResponseSchema = z.object({
 
 export type AskQuestionRequest = z.infer<typeof askQuestionRequestSchema>;
 export type AskQuestionResponse = z.infer<typeof askQuestionResponseSchema>;
+export type ConversationMessage = z.infer<typeof conversationMessageSchema>;

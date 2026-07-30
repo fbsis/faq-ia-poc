@@ -19,6 +19,21 @@ export interface EmbeddingProvider {
   embed(text: string): Promise<number[]>;
 }
 
+export interface ConversationMessage {
+  readonly role: "user" | "assistant";
+  readonly content: string;
+}
+
+export interface ConversationAgent {
+  rewriteQuestion(question: string, history: ConversationMessage[]): Promise<string>;
+  createGroundedResponse(input: {
+    question: string;
+    history: ConversationMessage[];
+    matchedQuestion: string;
+    approvedAnswer: string;
+  }): Promise<string>;
+}
+
 export interface CachedAnswer {
   readonly status: "answered" | "ambiguous" | "unanswered";
   readonly candidate?: FaqCandidate;

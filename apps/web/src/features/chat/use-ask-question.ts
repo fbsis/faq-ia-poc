@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import type { AskQuestionResponse } from "@faq/contracts";
+import type { AskQuestionResponse, ConversationMessage } from "@faq/contracts";
 import { askQuestion } from "./chat-api.js";
 
 export interface ChatTurn {
@@ -13,12 +13,24 @@ export interface ChatTurn {
 export function useAskQuestion() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const mutation = useMutation({
-    mutationFn: ({ question }: { question: string; turnId: string }) => askQuestion({ question })
+    mutationFn: ({
+      question,
+      history
+    }: {
+      question: string;
+      turnId: string;
+      history: ConversationMessage[];
+    }) => askQuestion({ question, ...(history.length > 0 ? { history } : {}) })
   });
 
-  function runTurn(question: string, turnId: string, onSuccess?: () => void) {
+  function runTurn(
+    question: string,
+    turnId: string,
+    history: ConversationMessage[],
+    onSuccess?: () => void
+  ) {
     mutation.mutate(
-      { question, turnId },
+      { question, turnId, history },
       {
         onSuccess(response) {
           setTurns((current) =>
@@ -40,11 +52,12 @@ export function useAskQuestion() {
   function submit(question: string, onSuccess?: () => void) {
     const trimmedQuestion = question.trim();
     const turnId = crypto.randomUUID();
+    const history = toConversationHistory(turns);
     setTurns((current) => [
       ...current,
       { id: turnId, question: trimmedQuestion, status: "pending" }
     ]);
-    runTurn(trimmedQuestion, turnId, onSuccess);
+    runTurn(trimmedQuestion, turnId, history, onSuccess);
   }
 
   function retry(turnId?: string) {
@@ -52,13 +65,31 @@ export function useAskQuestion() {
       ? turns.find((candidate) => candidate.id === turnId)
       : [...turns].reverse().find((candidate) => candidate.status === "error");
     if (!turn) return;
+    const turnIndex = turns.findIndex((candidate) => candidate.id === turn.id);
+    const history = toConversationHistory(turns.slice(0, turnIndex));
     setTurns((current) =>
       current.map((candidate) =>
         candidate.id === turn.id ? { ...candidate, status: "pending" } : candidate
       )
     );
-    runTurn(turn.question, turn.id);
+    runTurn(turn.question, turn.id, history);
   }
 
   return { ...mutation, submit, retry, turns };
+}
+
+function toConversationHistory(turns: ChatTurn[]): ConversationMessage[] {
+  return turns
+    .filter(
+      (turn): turn is ChatTurn & { response: AskQuestionResponse } =>
+        turn.status === "answered" && Boolean(turn.response)
+    )
+    .flatMap((turn) => [
+      { role: "user" as const, content: turn.question },
+      {
+        role: "assistant" as const,
+        content: turn.response.answer ?? turn.response.message
+      }
+    ])
+    .slice(-6);
 }

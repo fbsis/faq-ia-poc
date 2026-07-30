@@ -8,6 +8,7 @@ import { decideRetrieval, type RetrievalDecision } from "../domain/retrieval-pol
 import type {
   AnswerCache,
   CachedAnswer,
+  ConversationAgent,
   EmbeddingProvider,
   FaqSearch,
   InteractionRepository,
@@ -19,6 +20,7 @@ interface AskQuestionDependencies {
   cache: AnswerCache;
   interactions: InteractionRepository;
   embeddings: EmbeddingProvider;
+  conversation: ConversationAgent;
   knowledgeVersion: KnowledgeVersion;
   clock: Clock;
   ids: IdGenerator;
@@ -30,7 +32,9 @@ export class AskQuestion {
   constructor(private readonly dependencies: AskQuestionDependencies) {}
 
   async execute(input: AskQuestionRequest): Promise<AskQuestionResponse> {
-    const normalizedQuestion = normalizeQuestion(input.question);
+    const history = input.history ?? [];
+    const searchQuestion = await this.rewriteQuestion(input.question, history);
+    const normalizedQuestion = normalizeQuestion(searchQuestion);
     const categoryId = input.categoryId ?? null;
     const knowledgeVersion = await this.dependencies.knowledgeVersion.current();
     const cacheKey = createAnswerCacheKey({
@@ -43,8 +47,7 @@ export class AskQuestion {
     try {
       const cached = await this.dependencies.cache.get(cacheKey);
       if (cached) {
-        const interactionId = await this.persist(input.question, normalizedQuestion, cached, "hit");
-        return toResponse(interactionId, cached);
+        return this.complete(input.question, history, normalizedQuestion, cached, "hit");
       }
     } catch {
       cacheStatus = "bypassed";
@@ -58,13 +61,55 @@ export class AskQuestion {
       cacheStatus = "bypassed";
     }
 
+    return this.complete(input.question, history, normalizedQuestion, cached, cacheStatus);
+  }
+
+  private async rewriteQuestion(
+    question: string,
+    history: NonNullable<AskQuestionRequest["history"]>
+  ): Promise<string> {
+    if (history.length === 0) return question;
+    try {
+      return await this.dependencies.conversation.rewriteQuestion(question, history);
+    } catch {
+      return question;
+    }
+  }
+
+  private async complete(
+    rawQuestion: string,
+    history: NonNullable<AskQuestionRequest["history"]>,
+    normalizedQuestion: string,
+    result: CachedAnswer,
+    cacheStatus: CacheStatus
+  ): Promise<AskQuestionResponse> {
+    const displayedAnswer = await this.createDisplayedAnswer(rawQuestion, history, result);
     const interactionId = await this.persist(
-      input.question,
+      rawQuestion,
       normalizedQuestion,
-      cached,
-      cacheStatus
+      result,
+      cacheStatus,
+      displayedAnswer
     );
-    return toResponse(interactionId, cached);
+    return toResponse(interactionId, result, displayedAnswer);
+  }
+
+  private async createDisplayedAnswer(
+    question: string,
+    history: NonNullable<AskQuestionRequest["history"]>,
+    result: CachedAnswer
+  ): Promise<string | null> {
+    if (result.status !== "answered" || !result.candidate) return null;
+    try {
+      return await this.dependencies.conversation.createGroundedResponse({
+        question,
+        history,
+        matchedQuestion: result.candidate.canonicalQuestion,
+        approvedAnswer: result.candidate.answer
+      });
+    } catch {
+      return result.candidate.answer;
+    }
   }
 
   private async retrieve(
@@ -96,7 +141,8 @@ export class AskQuestion {
     rawQuestion: string,
     normalizedQuestion: string,
     result: CachedAnswer,
-    cacheStatus: CacheStatus
+    cacheStatus: CacheStatus,
+    displayedAnswer: string | null
   ): Promise<string> {
     const candidate = result.candidate;
     const interaction: Interaction = {
@@ -106,7 +152,8 @@ export class AskQuestion {
       outcome: result.status,
       faqId: candidate?.id ?? null,
       categoryId: candidate?.category.id ?? null,
-      answerSnapshot: result.status === "answered" ? (candidate?.answer ?? null) : null,
+      answerSnapshot: displayedAnswer,
+      sourceAnswerSnapshot: result.status === "answered" ? (candidate?.answer ?? null) : null,
       categorySnapshot: candidate?.category.name ?? null,
       confidence: candidate?.confidence ?? null,
       cacheStatus,
@@ -124,13 +171,17 @@ function toCachedAnswer(decision: RetrievalDecision): CachedAnswer {
   };
 }
 
-function toResponse(interactionId: string, result: CachedAnswer): AskQuestionResponse {
+function toResponse(
+  interactionId: string,
+  result: CachedAnswer,
+  displayedAnswer: string | null
+): AskQuestionResponse {
   if (result.status === "answered" && result.candidate) {
     return {
       interactionId,
       status: "answered",
       message: "Encontrei uma resposta aprovada para sua pergunta.",
-      answer: result.candidate.answer,
+      answer: displayedAnswer ?? result.candidate.answer,
       matchedQuestion: result.candidate.canonicalQuestion,
       category: result.candidate.category
     };

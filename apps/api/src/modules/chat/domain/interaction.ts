@@ -9,6 +9,7 @@ export interface Interaction {
   readonly faqId: string | null;
   readonly categoryId: string | null;
   readonly answerSnapshot: string | null;
+  readonly sourceAnswerSnapshot: string | null;
   readonly categorySnapshot: string | null;
   readonly confidence: number | null;
   readonly cacheStatus: CacheStatus;

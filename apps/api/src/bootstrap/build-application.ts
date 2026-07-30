@@ -20,6 +20,7 @@ import type { Admin, AdminSession } from "../modules/auth/domain/admin.js";
 import { registerChatRoutes } from "../modules/chat/adapters/inbound/http/chat-routes.js";
 import { DeterministicEmbeddingProvider } from "../modules/chat/adapters/outbound/deterministic-embedding-provider.js";
 import { OpenAiEmbeddingProvider } from "../modules/chat/adapters/outbound/openai-embedding-provider.js";
+import { OpenAiConversationAgent } from "../modules/chat/adapters/outbound/openai-conversation-agent.js";
 import { PostgresFaqSearch } from "../modules/chat/adapters/outbound/postgres-faq-search.js";
 import {
   PostgresInteractionRepository,
@@ -30,6 +31,7 @@ import { AskQuestion } from "../modules/chat/application/ask-question.js";
 import type {
   AnswerCache,
   CachedAnswer,
+  ConversationAgent,
   EmbeddingProvider,
   FaqSearch,
   InteractionRepository,
@@ -57,7 +59,8 @@ export async function buildApplication(
             ...process.env,
             NODE_ENV: "test",
             ADMIN_EMAIL: "admin@example.com",
-            ADMIN_PASSWORD: "change-this-password"
+            ADMIN_PASSWORD: "change-this-password",
+            CONVERSATION_PROVIDER: "deterministic"
           }
         : process.env
     );
@@ -118,6 +121,7 @@ interface Resources {
     cache: AnswerCache;
     interactions: InteractionRepository;
     embeddings: EmbeddingProvider;
+    conversation: ConversationAgent;
     knowledgeVersion: KnowledgeVersion;
   };
   pool?: DatabasePool;
@@ -132,6 +136,10 @@ function createRuntimeResources(environment: Environment): Resources {
     environment.EMBEDDING_PROVIDER === "openai"
       ? new OpenAiEmbeddingProvider(environment.OPENAI_API_KEY!, environment.OPENAI_EMBEDDING_MODEL)
       : new DeterministicEmbeddingProvider();
+  const conversation =
+    environment.CONVERSATION_PROVIDER === "openai"
+      ? new OpenAiConversationAgent(environment.OPENAI_API_KEY!, environment.OPENAI_CHAT_MODEL)
+      : deterministicConversationAgent;
   return {
     auth: new PostgresAuthRepository(pool),
     passwords: new ScryptPasswordHasher(),
@@ -140,6 +148,7 @@ function createRuntimeResources(environment: Environment): Resources {
       cache: new RedisAnswerCache(cache),
       interactions: new PostgresInteractionRepository(pool),
       embeddings,
+      conversation,
       knowledgeVersion: new PostgresKnowledgeVersion(pool)
     },
     pool,
@@ -165,10 +174,16 @@ async function createTestResources(environment: Environment): Promise<Resources>
       cache: new MemoryAnswerCache(),
       interactions: new MemoryInteractionRepository(),
       embeddings: new DeterministicEmbeddingProvider(),
+      conversation: deterministicConversationAgent,
       knowledgeVersion: { current: () => Promise.resolve(1) }
     }
   };
 }
+
+const deterministicConversationAgent: ConversationAgent = {
+  rewriteQuestion: (question) => Promise.resolve(question),
+  createGroundedResponse: ({ approvedAnswer }) => Promise.resolve(approvedAnswer)
+};
 
 class MemoryAuthRepository implements AdminRepository, SessionRepository {
   private readonly sessions = new Map<string, AdminSession>();

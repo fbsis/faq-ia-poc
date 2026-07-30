@@ -9,8 +9,9 @@ export class PostgresInteractionRepository implements InteractionRepository {
     await this.pool.query(
       `INSERT INTO interactions
        (id, raw_question, normalized_question, outcome, faq_id, category_id,
-        answer_snapshot, category_snapshot, confidence, cache_status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        answer_snapshot, source_answer_snapshot, category_snapshot, confidence, cache_status,
+        created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         interaction.id,
         interaction.rawQuestion,
@@ -19,6 +20,7 @@ export class PostgresInteractionRepository implements InteractionRepository {
         interaction.faqId,
         interaction.categoryId,
         interaction.answerSnapshot,
+        interaction.sourceAnswerSnapshot,
         interaction.categorySnapshot,
         interaction.confidence,
         interaction.cacheStatus,

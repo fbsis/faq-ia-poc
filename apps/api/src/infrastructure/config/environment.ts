@@ -10,7 +10,9 @@ const environmentSchema = z
     QUEUE_REDIS_URL: z.string().url().default("redis://localhost:6380"),
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+    OPENAI_CHAT_MODEL: z.string().default("gpt-5.6-luna"),
     EMBEDDING_PROVIDER: z.enum(["openai", "deterministic"]).default("deterministic"),
+    CONVERSATION_PROVIDER: z.enum(["openai", "deterministic"]).default("openai"),
     SESSION_SECRET: z.string().min(32).default("local-session-secret-change-me-1234567890"),
     SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(28_800),
     ADMIN_EMAIL: z.string().email().default("admin@example.com"),
@@ -20,11 +22,14 @@ const environmentSchema = z
     FAQ_AMBIGUITY_THRESHOLD: z.coerce.number().min(0).max(1).default(0.7)
   })
   .superRefine((value, context) => {
-    if (value.EMBEDDING_PROVIDER === "openai" && !value.OPENAI_API_KEY) {
+    if (
+      (value.EMBEDDING_PROVIDER === "openai" || value.CONVERSATION_PROVIDER === "openai") &&
+      !value.OPENAI_API_KEY
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["OPENAI_API_KEY"],
-        message: "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai."
+        message: "OPENAI_API_KEY is required for the configured OpenAI providers."
       });
     }
     if (value.FAQ_AMBIGUITY_THRESHOLD >= value.FAQ_ACCEPTANCE_THRESHOLD) {

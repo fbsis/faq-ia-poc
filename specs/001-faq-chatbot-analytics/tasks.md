@@ -447,16 +447,16 @@ Task T128: knowledge-gap administration UI tests
 
 ### Tests
 
-- [ ] T159 [US1] Add bounded conversation-history request contract tests in `packages/contracts/src/chat.test.ts`
-- [ ] T160 [US1] Add contextual query, grounded response, and safe generation fallback tests in `apps/api/tests/unit/chat/ask-question.test.ts`
-- [ ] T161 [US1] Add follow-up history transmission and natural answer rendering tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
+- [X] T159 [US1] Add bounded conversation-history request contract tests in `packages/contracts/src/chat.test.ts`
+- [X] T160 [US1] Add contextual query, grounded response, and safe generation fallback tests in `apps/api/tests/unit/chat/ask-question.test.ts`
+- [X] T161 [US1] Add follow-up history transmission and natural answer rendering tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
 
 ### Implementation
 
-- [ ] T162 [US1] Extend shared chat contracts with a bounded anonymous message history in `packages/contracts/src/chat.ts`
-- [ ] T163 [US1] Define the conversation port and implement stateless OpenAI Responses adapters in `apps/api/src/modules/chat/application/ports.ts` and `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`
-- [ ] T164 [US1] Rewrite contextual queries, ground natural answers, persist source snapshots, and wire runtime configuration in `apps/api/src/modules/chat/application/ask-question.ts`, `apps/api/src/modules/chat/domain/interaction.ts`, `apps/api/src/modules/chat/adapters/outbound/postgres-interaction-repository.ts`, `apps/api/src/infrastructure/database/migrations/0002_conversational_answers.sql`, `apps/api/src/infrastructure/database/schema.ts`, `apps/api/src/infrastructure/config/environment.ts`, and `apps/api/src/bootstrap/build-application.ts`
-- [ ] T165 [US1] Send bounded completed turns and render the grounded assistant response in `apps/web/src/features/chat/use-ask-question.ts` and `apps/web/src/features/chat/chat-message.tsx`
+- [X] T162 [US1] Extend shared chat contracts with a bounded anonymous message history in `packages/contracts/src/chat.ts`
+- [X] T163 [US1] Define the conversation port and implement stateless OpenAI Responses adapters in `apps/api/src/modules/chat/application/ports.ts` and `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`
+- [X] T164 [US1] Rewrite contextual queries, ground natural answers, persist source snapshots, and wire runtime configuration in `apps/api/src/modules/chat/application/ask-question.ts`, `apps/api/src/modules/chat/domain/interaction.ts`, `apps/api/src/modules/chat/adapters/outbound/postgres-interaction-repository.ts`, `apps/api/src/infrastructure/database/migrations/0002_conversational_answers.sql`, `apps/api/src/infrastructure/database/schema.ts`, `apps/api/src/infrastructure/config/environment.ts`, and `apps/api/src/bootstrap/build-application.ts`
+- [X] T165 [US1] Send bounded completed turns and render the grounded assistant response in `apps/web/src/features/chat/use-ask-question.ts` and `apps/web/src/features/chat/chat-message.tsx`
 
 **Checkpoint**: A user can ask a follow-up that depends on recent turns and receive a natural
 answer grounded in one approved FAQ; generation failure exposes only the approved source text.

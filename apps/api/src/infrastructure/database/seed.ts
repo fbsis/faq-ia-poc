@@ -54,9 +54,11 @@ export async function seedDatabase(connectionString: string): Promise<void> {
       await client.query(
         `INSERT INTO interactions
          (id, raw_question, normalized_question, outcome, faq_id, category_id,
-          answer_snapshot, category_snapshot, confidence, cache_status, created_at)
+          answer_snapshot, source_answer_snapshot, category_snapshot, confidence, cache_status,
+          created_at)
          VALUES ($1, 'Como redefino minha senha?', 'como redefino minha senha', 'answered',
            $2, $3,
+           'Na tela de login, selecione “Esqueci minha senha” e siga as instruções enviadas por e-mail.',
            'Na tela de login, selecione “Esqueci minha senha” e siga as instruções enviadas por e-mail.',
            'Conta e acesso', 1, 'miss', '2026-07-30T12:00:00.000Z')
          ON CONFLICT (id) DO NOTHING`,

@@ -16,7 +16,7 @@ export function ChatMessage({ result }: { result: AskQuestionResponse }) {
               <HelpCircle aria-hidden className="text-amber-600" size={17} />
             )}
             <span className="text-sm font-semibold text-slate-700">
-              {answered ? "Resposta aprovada" : "Vamos confirmar"}
+              {answered ? "Resposta baseada na FAQ aprovada" : "Vamos confirmar"}
             </span>
             {result.category ? (
               <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">

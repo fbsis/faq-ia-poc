@@ -101,6 +101,7 @@ export const interactions = pgTable(
     faqId: uuid("faq_id"),
     categoryId: uuid("category_id"),
     answerSnapshot: text("answer_snapshot"),
+    sourceAnswerSnapshot: text("source_answer_snapshot"),
     categorySnapshot: text("category_snapshot"),
     confidence: doublePrecision(),
     cacheStatus: text("cache_status").notNull(),
