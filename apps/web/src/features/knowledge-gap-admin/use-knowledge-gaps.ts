@@ -26,7 +26,12 @@ export function useKnowledgeGap(id: string | null) {
   return useQuery({
     queryKey: ["knowledge-gap", id],
     queryFn: () => getKnowledgeGap(id!),
-    enabled: Boolean(id)
+    enabled: Boolean(id),
+    refetchInterval: (query) =>
+      query.state.data?.status === "resolving" ||
+      query.state.data?.currentResolution?.status === "pending"
+        ? 250
+        : false
   });
 }
 

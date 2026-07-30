@@ -48,22 +48,34 @@ export function KnowledgeGapActions({ details }: { details: KnowledgeGapDetails 
   }
 
   if (details.status === "dismissed") {
+    const conflict =
+      reopen.error instanceof HttpError &&
+      reopen.error.envelope.code === "KNOWLEDGE_GAP_VERSION_CONFLICT";
     return (
-      <Button
-        className="mt-5 w-full"
-        disabled={reopen.isPending}
-        variant="ghost"
-        onClick={() =>
-          reopen.mutate({
-            id: details.id,
-            input: { expectedVersion: details.version },
-            idempotencyKey: crypto.randomUUID()
-          })
-        }
-      >
-        <RotateCcw className="mr-2 size-4" aria-hidden="true" />
-        {reopen.isPending ? "Reabrindo…" : "Reabrir pendência"}
-      </Button>
+      <div className="mt-5">
+        <Button
+          className="w-full"
+          disabled={reopen.isPending}
+          variant="ghost"
+          onClick={() =>
+            reopen.mutate({
+              id: details.id,
+              input: { expectedVersion: details.version },
+              idempotencyKey: crypto.randomUUID()
+            })
+          }
+        >
+          <RotateCcw className="mr-2 size-4" aria-hidden="true" />
+          {reopen.isPending ? "Reabrindo…" : "Reabrir pendência"}
+        </Button>
+        {reopen.isError && (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {conflict
+              ? "A pendência mudou. Recarregue os dados antes de tentar novamente."
+              : "Não foi possível reabrir a pendência. Tente novamente."}
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -103,7 +115,10 @@ export function KnowledgeGapActions({ details }: { details: KnowledgeGapDetails 
       </label>
       {dismiss.isError && (
         <p className="text-sm text-red-700" role="alert">
-          Não foi possível descartar a pendência. Tente novamente.
+          {dismiss.error instanceof HttpError &&
+          dismiss.error.envelope.code === "KNOWLEDGE_GAP_VERSION_CONFLICT"
+            ? "A pendência mudou. Recarregue os dados antes de tentar novamente."
+            : "Não foi possível descartar a pendência. Tente novamente."}
         </p>
       )}
       <div className="flex gap-2">

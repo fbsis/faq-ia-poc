@@ -30,6 +30,19 @@ export function KnowledgeGapDetails({
         </Button>
       </div>
 
+      {details.currentResolution?.status === "pending" && (
+        <div
+          className="mt-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900"
+          role="status"
+        >
+          <p className="font-semibold">Resposta em processamento</p>
+          <p className="mt-1">
+            A pendência será marcada como resolvida assim que a resposta estiver disponível no
+            chatbot.
+          </p>
+        </div>
+      )}
+
       {details.status === "open" && (
         <Button asChild className="mt-5 w-full">
           <Link to={`/admin/faqs?knowledgeGapId=${details.id}`}>
