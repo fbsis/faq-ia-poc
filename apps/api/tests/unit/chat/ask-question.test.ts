@@ -151,15 +151,31 @@ describe("AskQuestion", () => {
     });
   });
 
-  it("returns an ambiguous result without presenting an answer", async () => {
+  it("answers when retrieval finds one plausible similar question", async () => {
     const search = new SearchFake();
     search.exact = null;
     search.semantic = [{ ...answer, confidence: 0.74 }];
+    const { useCase, conversation } = createUseCase({ search });
+
+    await expect(useCase.execute({ question: "Não consigo acessar" })).resolves.toMatchObject({
+      status: "answered",
+      answer: conversation.response,
+      matchedQuestion: answer.canonicalQuestion
+    });
+  });
+
+  it("suggests all plausible questions when multiple candidates compete", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    search.semantic = [
+      { ...answer, id: "faq-1", canonicalQuestion: "Como redefino minha senha?", confidence: 0.74 },
+      { ...answer, id: "faq-2", canonicalQuestion: "Como altero minha senha?", confidence: 0.72 }
+    ];
     const { useCase } = createUseCase({ search });
 
     await expect(useCase.execute({ question: "Não consigo acessar" })).resolves.toMatchObject({
       status: "ambiguous",
-      suggestions: [answer.canonicalQuestion]
+      suggestions: ["Como redefino minha senha?", "Como altero minha senha?"]
     });
   });
 

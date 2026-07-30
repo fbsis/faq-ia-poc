@@ -21,6 +21,7 @@ function createUseCase(options?: {
   semanticConfidence?: number;
 }) {
   const recorded: Interaction[] = [];
+  const answered: Interaction[] = [];
   const search: FaqSearch = {
     findExact: () => Promise.resolve(null),
     findSemantic: () =>
@@ -60,7 +61,10 @@ function createUseCase(options?: {
         : Promise.resolve("Em qual etapa do cadastro surgiu essa dúvida?")
   };
   const interactions: InteractionRepository = {
-    save: () => Promise.reject(new Error("unanswered must use the atomic recorder"))
+    save: (interaction) => {
+      answered.push(interaction);
+      return Promise.resolve();
+    }
   };
   const unanswered: UnansweredInteractionRecorder = {
     record: (interaction) => {
@@ -83,7 +87,8 @@ function createUseCase(options?: {
       clock: new FixedClock(),
       ids: new SequentialIds()
     }),
-    recorded
+    recorded,
+    answered
   };
 }
 
@@ -107,14 +112,19 @@ describe("unanswered question handling", () => {
     });
   });
 
-  it("records an ambiguous suggestion as a knowledge gap without asserting its answer", async () => {
-    const { useCase, recorded } = createUseCase({ semanticConfidence: 0.74 });
+  it("answers a unique plausible candidate without creating a knowledge gap", async () => {
+    const { useCase, recorded, answered } = createUseCase({ semanticConfidence: 0.74 });
 
     await expect(useCase.execute({ question: "Não consigo entrar" })).resolves.toMatchObject({
-      status: "ambiguous",
-      suggestions: ["Pergunta apenas parecida"]
+      status: "answered",
+      matchedQuestion: "Pergunta apenas parecida",
+      answer: "Resposta que não deve ser afirmada."
     });
-    expect(recorded[0]).toMatchObject({ outcome: "ambiguous", answerSnapshot: null });
+    expect(recorded).toHaveLength(0);
+    expect(answered[0]).toMatchObject({
+      outcome: "answered",
+      sourceAnswerSnapshot: "Resposta que não deve ser afirmada."
+    });
   });
 
   it("returns deterministic guidance when OpenAI and Redis are unavailable", async () => {

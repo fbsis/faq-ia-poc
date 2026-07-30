@@ -33,26 +33,46 @@ describe("FAQ retrieval policy", () => {
       knowledgeVersion: 7,
       categoryId: null
     });
-    expect(key).toMatch(/^faq-answer:v1:7:all:[a-f0-9]{64}$/);
+    expect(key).toMatch(/^faq-answer:v2:7:all:[a-f0-9]{64}$/);
     expect(key).not.toContain("senha");
   });
 
   it("accepts exact matches independent of semantic score", () => {
-    expect(decideRetrieval({ candidate: { ...candidate, confidence: 1 }, exact: true })).toEqual({
-      outcome: "answered",
-      candidate: { ...candidate, confidence: 1 }
-    });
+    expect(decideRetrieval({ candidates: [{ ...candidate, confidence: 1 }], exact: true })).toEqual(
+      {
+        outcome: "answered",
+        candidate: { ...candidate, confidence: 1 }
+      }
+    );
   });
 
-  it("keeps threshold boundaries unambiguous", () => {
+  it("answers a single plausible candidate instead of asking for confirmation", () => {
     expect(
-      decideRetrieval({ candidate: { ...candidate, confidence: 0.78 }, exact: false }).outcome
+      decideRetrieval({ candidates: [{ ...candidate, confidence: 0.78 }], exact: false }).outcome
     ).toBe("answered");
     expect(
-      decideRetrieval({ candidate: { ...candidate, confidence: 0.7 }, exact: false }).outcome
-    ).toBe("ambiguous");
+      decideRetrieval({ candidates: [{ ...candidate, confidence: 0.7 }], exact: false }).outcome
+    ).toBe("answered");
     expect(
-      decideRetrieval({ candidate: { ...candidate, confidence: 0.699 }, exact: false }).outcome
+      decideRetrieval({ candidates: [{ ...candidate, confidence: 0.699 }], exact: false }).outcome
     ).toBe("unanswered");
+  });
+
+  it("suggests alternatives only when multiple plausible candidates compete", () => {
+    const alternatives = [
+      {
+        ...candidate,
+        id: "faq-1",
+        canonicalQuestion: "Como redefino minha senha?",
+        confidence: 0.74
+      },
+      { ...candidate, id: "faq-2", canonicalQuestion: "Como altero minha senha?", confidence: 0.72 }
+    ];
+
+    expect(decideRetrieval({ candidates: alternatives, exact: false })).toEqual({
+      outcome: "ambiguous",
+      candidate: alternatives[0],
+      suggestions: alternatives
+    });
   });
 });

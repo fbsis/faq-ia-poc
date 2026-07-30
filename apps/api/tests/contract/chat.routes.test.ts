@@ -64,7 +64,7 @@ describe("POST /api/v1/chat/questions", () => {
     await app.close();
   });
 
-  it("returns an ambiguous approved suggestion without an answer", async () => {
+  it("answers a unique plausible approved match without asking for confirmation", async () => {
     const app = await buildApplication({ mode: "test" });
     const response = await app.inject({
       method: "POST",
@@ -74,10 +74,11 @@ describe("POST /api/v1/chat/questions", () => {
 
     expect(response.statusCode).toBe(200);
     expect(askQuestionResponseSchema.parse(response.json())).toMatchObject({
-      status: "ambiguous",
-      suggestions: ["Como redefino minha senha?"]
+      status: "answered",
+      matchedQuestion: "Como redefino minha senha?"
     });
-    expect(response.json()).not.toHaveProperty("answer");
+    expect(response.json()).toHaveProperty("answer");
+    expect(response.json()).not.toHaveProperty("suggestions");
     await app.close();
   });
 
