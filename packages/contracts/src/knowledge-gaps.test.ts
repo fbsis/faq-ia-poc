@@ -90,9 +90,9 @@ describe("knowledge gap contracts", () => {
       answer: "Abra a área de documentos.",
       expectedVersion: 2
     };
-    expect(resolveKnowledgeGapInputSchema.parse({ ...baseResolution, mode: "create" })).toMatchObject(
-      { mode: "create", aliases: [] }
-    );
+    expect(
+      resolveKnowledgeGapInputSchema.parse({ ...baseResolution, mode: "create" })
+    ).toMatchObject({ mode: "create", aliases: [] });
     expect(() =>
       resolveKnowledgeGapInputSchema.parse({ ...baseResolution, mode: "update" })
     ).toThrow();

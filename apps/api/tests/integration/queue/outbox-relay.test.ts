@@ -14,12 +14,15 @@ describe("OutboxRelay", () => {
     ];
     const published: string[] = [];
     const completed: string[] = [];
-    const relay = new OutboxRelay({
-      claim: async () => messages,
-      markPublished: async (ids) => completed.push(...ids)
-    }, {
-      publish: async (_, jobId) => published.push(jobId)
-    });
+    const relay = new OutboxRelay(
+      {
+        claim: async () => messages,
+        markPublished: async (ids) => completed.push(...ids)
+      },
+      {
+        publish: async (_, jobId) => published.push(jobId)
+      }
+    );
 
     await relay.runOnce();
     await relay.runOnce();

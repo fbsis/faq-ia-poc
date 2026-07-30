@@ -213,9 +213,7 @@ function interaction(id: string, rawQuestion: string): Interaction {
   return {
     id,
     rawQuestion,
-    normalizedQuestion: id.endsWith("501")
-      ? "pergunta fora do escopo"
-      : "como emitir segunda via",
+    normalizedQuestion: id.endsWith("501") ? "pergunta fora do escopo" : "como emitir segunda via",
     outcome: "unanswered",
     faqId: null,
     categoryId: null,

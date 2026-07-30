@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDatabasePool, type DatabasePool } from "../../../src/infrastructure/database/client.js";
+import {
+  createDatabasePool,
+  type DatabasePool
+} from "../../../src/infrastructure/database/client.js";
 import { runMigrations } from "../../../src/infrastructure/database/migrate.js";
 import { PostgresFaqRepository } from "../../../src/modules/faq/adapters/outbound/postgres-faq-repository.js";
 import { createFaqEntry } from "../../../src/modules/faq/domain/faq-entry.js";

@@ -9,10 +9,7 @@ interface Corpus {
 }
 
 const corpus = JSON.parse(
-  readFileSync(
-    fileURLToPath(new URL("./fixtures/portuguese-faqs.json", import.meta.url)),
-    "utf8"
-  )
+  readFileSync(fileURLToPath(new URL("./fixtures/portuguese-faqs.json", import.meta.url)), "utf8")
 ) as Corpus;
 
 describe("Portuguese retrieval quality gate", () => {
@@ -39,9 +36,7 @@ function rank(query: string) {
   return corpus.faqs
     .map((faq) => ({
       id: faq.id,
-      score: Math.max(
-        ...[faq.question, ...faq.aliases].map((source) => similarity(query, source))
-      )
+      score: Math.max(...[faq.question, ...faq.aliases].map((source) => similarity(query, source)))
     }))
     .sort((left, right) => right.score - left.score);
 }
@@ -54,8 +49,7 @@ function similarity(left: string, right: string): number {
   const leftTrigrams = trigrams(normalizeQuestion(left));
   const rightTrigrams = trigrams(normalizeQuestion(right));
   const trigramIntersection = [...leftTrigrams].filter((term) => rightTrigrams.has(term)).length;
-  const trigramScore =
-    (2 * trigramIntersection) / (leftTrigrams.size + rightTrigrams.size);
+  const trigramScore = (2 * trigramIntersection) / (leftTrigrams.size + rightTrigrams.size);
   return tokenScore * 0.7 + trigramScore * 0.3;
 }
 

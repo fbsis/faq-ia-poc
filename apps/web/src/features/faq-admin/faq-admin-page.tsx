@@ -150,9 +150,7 @@ export function FaqAdminPage() {
                     input: {
                       ...input,
                       mode: resolutionMode,
-                      ...(resolutionMode === "update" && targetFaq
-                        ? { faqId: targetFaq.id }
-                        : {}),
+                      ...(resolutionMode === "update" && targetFaq ? { faqId: targetFaq.id } : {}),
                       expectedVersion: knowledgeGap.data.version
                     }
                   });

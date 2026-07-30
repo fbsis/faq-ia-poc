@@ -146,12 +146,7 @@ integration("knowledge-gap resolution worker", () => {
     const interactionId = uuid(sequence++);
     const normalizedQuestion = `gap-${sequence}`;
     await new PostgresUnansweredRecorder(pool).record(
-      interaction(
-        interactionId,
-        question,
-        normalizedQuestion,
-        new Date("2026-07-30T12:00:00.000Z")
-      )
+      interaction(interactionId, question, normalizedQuestion, new Date("2026-07-30T12:00:00.000Z"))
     );
     const gap = (
       await gaps.list({ page: 1, pageSize: 100, status: "open", sort: "latest_desc" })

@@ -19,11 +19,7 @@ const gap: KnowledgeGap = {
 describe("knowledge gap actions", () => {
   it("dismisses an open gap with an audited reason", async () => {
     const repository = { dismiss: vi.fn(async () => gap) };
-    const useCase = new DismissKnowledgeGap(
-      repository,
-      new SequentialIds(),
-      new FixedClock()
-    );
+    const useCase = new DismissKnowledgeGap(repository, new SequentialIds(), new FixedClock());
 
     await expect(
       useCase.execute({

@@ -75,11 +75,7 @@ export async function shutdownEmbeddingWorker(resources: {
   pool: { end(): Promise<unknown> };
 }): Promise<void> {
   await resources.worker.close();
-  await Promise.allSettled([
-    resources.queue.close(),
-    resources.redis.quit(),
-    resources.pool.end()
-  ]);
+  await Promise.allSettled([resources.queue.close(), resources.redis.quit(), resources.pool.end()]);
 }
 
 const defaults = createEmbeddingQueuePolicy();

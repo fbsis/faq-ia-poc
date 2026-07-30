@@ -59,8 +59,7 @@ export async function startEmbeddingWorker(): Promise<void> {
     }
   });
   let stopping: Promise<void> | undefined;
-  const stop = () =>
-    (stopping ??= shutdownEmbeddingWorker({ worker, queue, redis, pool }));
+  const stop = () => (stopping ??= shutdownEmbeddingWorker({ worker, queue, redis, pool }));
   process.once("SIGINT", () => void stop());
   process.once("SIGTERM", () => void stop());
   await worker.waitUntilReady();

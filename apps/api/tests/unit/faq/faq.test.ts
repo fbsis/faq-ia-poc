@@ -22,7 +22,9 @@ describe("FAQ lifecycle", () => {
     });
 
     expect(faq).toMatchObject({ status: "embedding_pending", contentVersion: 1 });
-    expect(() => createFaqEntry({ ...input, answer: "" }, { id: faq.id, now: faq.createdAt })).toThrow();
+    expect(() =>
+      createFaqEntry({ ...input, answer: "" }, { id: faq.id, now: faq.createdAt })
+    ).toThrow();
   });
 
   it("increments content version only when searchable content changes", () => {

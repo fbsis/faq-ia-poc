@@ -16,9 +16,7 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
         POSTGRES_PASSWORD: "faq"
       })
       .withExposedPorts(5432)
-      .withWaitStrategy(
-        Wait.forLogMessage(/database system is ready to accept connections/, 2)
-      )
+      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
       .start(),
     startRedis(),
     startRedis()

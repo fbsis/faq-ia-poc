@@ -1,8 +1,4 @@
-import type {
-  KnowledgeGapDetails,
-  KnowledgeGapListQuery,
-  KnowledgeGapPage
-} from "@faq/contracts";
+import type { KnowledgeGapDetails, KnowledgeGapListQuery, KnowledgeGapPage } from "@faq/contracts";
 import { describe, expect, it } from "vitest";
 import { GetKnowledgeGap } from "../../../src/modules/knowledge-gaps/application/get-knowledge-gap.js";
 import { ListKnowledgeGaps } from "../../../src/modules/knowledge-gaps/application/list-knowledge-gaps.js";

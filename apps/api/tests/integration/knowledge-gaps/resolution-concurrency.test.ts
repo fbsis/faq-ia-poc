@@ -62,12 +62,7 @@ integration("knowledge-gap resolution concurrency", () => {
     const gap = await createGap("Como altero meu endereço?");
     const first = resolutionCommand(gap.id, gap.version, sequence++, "conflicting-resolution-key");
     const conflicting = {
-      ...resolutionCommand(
-        gap.id,
-        gap.version,
-        sequence++,
-        "conflicting-resolution-key"
-      ),
+      ...resolutionCommand(gap.id, gap.version, sequence++, "conflicting-resolution-key"),
       input: { ...first.input, answer: "Uma resposta diferente." }
     };
 
@@ -77,9 +72,7 @@ integration("knowledge-gap resolution concurrency", () => {
     ]);
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    expect(
-      results.find((result) => result.status === "rejected")
-    ).toMatchObject({
+    expect(results.find((result) => result.status === "rejected")).toMatchObject({
       reason: { code: "KNOWLEDGE_GAP_IDEMPOTENCY_CONFLICT", statusCode: 409 }
     });
     await expectCounts(gap.id, { resolutions: 1, events: 1, outbox: 1 });
@@ -98,9 +91,7 @@ integration("knowledge-gap resolution concurrency", () => {
     ]);
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    expect(
-      results.find((result) => result.status === "rejected")
-    ).toMatchObject({
+    expect(results.find((result) => result.status === "rejected")).toMatchObject({
       reason: { code: "KNOWLEDGE_GAP_VERSION_CONFLICT", statusCode: 409 }
     });
     await expectCounts(gap.id, { resolutions: 1, events: 1, outbox: 1 });
@@ -108,53 +99,29 @@ integration("knowledge-gap resolution concurrency", () => {
 
   it("deduplicates concurrent dismissals and rejects a competing action", async () => {
     const replayGap = await createGap("Pergunta duplicada para descarte");
-    const command = dismissCommand(
-      replayGap.id,
-      replayGap.version,
-      sequence++,
-      "same-dismiss-key"
-    );
+    const command = dismissCommand(replayGap.id, replayGap.version, sequence++, "same-dismiss-key");
     const [left, right] = await Promise.all([
       repository.dismiss(command),
       repository.dismiss({
-        ...dismissCommand(
-          replayGap.id,
-          replayGap.version,
-          sequence++,
-          "same-dismiss-key"
-        ),
+        ...dismissCommand(replayGap.id, replayGap.version, sequence++, "same-dismiss-key"),
         input: command.input
       })
     ]);
 
     expect(right).toEqual(left);
-    expect(
-      await eventCount(replayGap.id, "dismissed")
-    ).toBe(1);
+    expect(await eventCount(replayGap.id, "dismissed")).toBe(1);
 
     const competingGap = await createGap("Pergunta concorrente para descarte");
     const competing = await Promise.allSettled([
       repository.dismiss(
-        dismissCommand(
-          competingGap.id,
-          competingGap.version,
-          sequence++,
-          "different-dismiss-key-a"
-        )
+        dismissCommand(competingGap.id, competingGap.version, sequence++, "different-dismiss-key-a")
       ),
       repository.dismiss(
-        dismissCommand(
-          competingGap.id,
-          competingGap.version,
-          sequence++,
-          "different-dismiss-key-b"
-        )
+        dismissCommand(competingGap.id, competingGap.version, sequence++, "different-dismiss-key-b")
       )
     ]);
     expect(competing.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    expect(
-      competing.find((result) => result.status === "rejected")
-    ).toMatchObject({
+    expect(competing.find((result) => result.status === "rejected")).toMatchObject({
       reason: { code: "KNOWLEDGE_GAP_VERSION_CONFLICT", statusCode: 409 }
     });
     expect(await eventCount(competingGap.id, "dismissed")).toBe(1);
@@ -210,12 +177,7 @@ integration("knowledge-gap resolution concurrency", () => {
   }
 });
 
-function resolutionCommand(
-  gapId: string,
-  version: number,
-  seed: number,
-  idempotencyKey: string
-) {
+function resolutionCommand(gapId: string, version: number, seed: number, idempotencyKey: string) {
   return {
     knowledgeGapId: gapId,
     adminId,
@@ -236,12 +198,7 @@ function resolutionCommand(
   };
 }
 
-function dismissCommand(
-  gapId: string,
-  version: number,
-  seed: number,
-  idempotencyKey: string
-) {
+function dismissCommand(gapId: string, version: number, seed: number, idempotencyKey: string) {
   return {
     knowledgeGapId: gapId,
     adminId,

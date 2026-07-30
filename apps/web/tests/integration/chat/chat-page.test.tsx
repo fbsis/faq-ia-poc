@@ -95,7 +95,10 @@ describe("public FAQ chat", () => {
     );
     renderPage();
 
-    await userEvent.type(screen.getByLabelText(/digite sua pergunta/i), "Perfeito, funcionou aqui!");
+    await userEvent.type(
+      screen.getByLabelText(/digite sua pergunta/i),
+      "Perfeito, funcionou aqui!"
+    );
     await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
 
     expect(await screen.findByText(/fico feliz que tenha funcionado/i)).toBeVisible();

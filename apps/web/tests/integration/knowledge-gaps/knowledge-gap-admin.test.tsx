@@ -18,9 +18,7 @@ const gap = {
   createdAt: "2026-07-29T12:00:00.000Z",
   updatedAt: "2026-07-30T12:00:00.000Z"
 };
-const server = setupServer(
-  http.get("/api/v1/categories", () => HttpResponse.json([]))
-);
+const server = setupServer(http.get("/api/v1/categories", () => HttpResponse.json([])));
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
@@ -208,9 +206,7 @@ describe("knowledge gap administration", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: /tentar resolução novamente/i })
     );
-    expect(
-      await screen.findByText(/a pendência mudou.*recarregue os dados/i)
-    ).toBeVisible();
+    expect(await screen.findByText(/a pendência mudou.*recarregue os dados/i)).toBeVisible();
     expect(screen.getAllByText(gap.representativeQuestion)).toHaveLength(2);
   });
 
@@ -263,12 +259,8 @@ describe("knowledge gap administration", () => {
       version: 4,
       currentResolution: undefined
     };
-    await userEvent.click(
-      await screen.findByRole("button", { name: /reabrir pendência/i })
-    );
-    expect(
-      await screen.findByText(/a pendência mudou.*recarregue os dados/i)
-    ).toBeVisible();
+    await userEvent.click(await screen.findByRole("button", { name: /reabrir pendência/i }));
+    expect(await screen.findByText(/a pendência mudou.*recarregue os dados/i)).toBeVisible();
   });
 
   it("refreshes the inbox until a resolving gap reaches its final status", async () => {

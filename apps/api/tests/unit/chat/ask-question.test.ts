@@ -53,10 +53,9 @@ class ConversationAgentFake implements ConversationAgent {
   failUnansweredResponse = false;
   unansweredCalls = 0;
 
-  routeMessage(question: string): Promise<
-    | { intent: "faq"; searchQuestion: string }
-    | { intent: "social"; response: string }
-  > {
+  routeMessage(
+    question: string
+  ): Promise<{ intent: "faq"; searchQuestion: string } | { intent: "social"; response: string }> {
     this.routeCalls += 1;
     if (question === "Perfeito, funcionou aqui!") {
       return Promise.resolve({
