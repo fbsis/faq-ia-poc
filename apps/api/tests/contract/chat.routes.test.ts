@@ -31,4 +31,55 @@ describe("POST /api/v1/chat/questions", () => {
     expect(errorEnvelopeSchema.parse(response.json()).code).toBe("VALIDATION_ERROR");
     await app.close();
   });
+
+  it("returns an unanswered response for an unknown question", async () => {
+    const app = await buildApplication({ mode: "test" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/chat/questions",
+      payload: { question: "Como altero um dado que não está na base?" }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(askQuestionResponseSchema.parse(response.json())).toMatchObject({
+      status: "unanswered"
+    });
+    await app.close();
+  });
+
+  it("returns an ambiguous approved suggestion without an answer", async () => {
+    const app = await buildApplication({ mode: "test" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/chat/questions",
+      payload: { question: "Não consigo acessar minha conta" }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(askQuestionResponseSchema.parse(response.json())).toMatchObject({
+      status: "ambiguous",
+      suggestions: ["Como redefino minha senha?"]
+    });
+    expect(response.json()).not.toHaveProperty("answer");
+    await app.close();
+  });
+
+  it("returns a stable unavailable envelope when recording cannot commit", async () => {
+    const app = await buildApplication({
+      mode: "test",
+      testOverrides: { failInteractionRecording: true }
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/chat/questions",
+      payload: { question: "Pergunta desconhecida" }
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(errorEnvelopeSchema.parse(response.json())).toMatchObject({
+      code: "CHAT_UNAVAILABLE",
+      message: "Não foi possível registrar sua pergunta com segurança. Tente novamente."
+    });
+    await app.close();
+  });
 });

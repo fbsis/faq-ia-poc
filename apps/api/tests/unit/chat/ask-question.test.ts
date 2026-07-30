@@ -11,6 +11,7 @@ import type {
 } from "../../../src/modules/chat/application/ports.js";
 import type { Interaction } from "../../../src/modules/chat/domain/interaction.js";
 import type { FaqCandidate } from "../../../src/modules/chat/domain/faq-candidate.js";
+import type { UnansweredInteractionRecorder } from "../../../src/modules/knowledge-gaps/application/ports.js";
 import { FixedClock, SequentialIds } from "../../helpers/fakes.js";
 
 const answer: FaqCandidate = {
@@ -89,6 +90,14 @@ class InteractionFake implements InteractionRepository {
   }
 }
 
+class UnansweredRecorderFake implements UnansweredInteractionRecorder {
+  records: Interaction[] = [];
+  record(interaction: Interaction): Promise<void> {
+    this.records.push(interaction);
+    return Promise.resolve();
+  }
+}
+
 function createUseCase(overrides?: {
   search?: SearchFake;
   cache?: CacheFake;
@@ -97,6 +106,7 @@ function createUseCase(overrides?: {
   const search = overrides?.search ?? new SearchFake();
   const cache = overrides?.cache ?? new CacheFake();
   const interactions = new InteractionFake();
+  const unanswered = new UnansweredRecorderFake();
   const conversation = overrides?.conversation ?? new ConversationAgentFake();
   const embeddings: EmbeddingProvider = {
     embed: () => Promise.resolve([0.1, 0.2])
@@ -107,6 +117,7 @@ function createUseCase(overrides?: {
       search,
       cache,
       interactions,
+      unanswered,
       embeddings,
       conversation,
       knowledgeVersion: version,
@@ -116,6 +127,7 @@ function createUseCase(overrides?: {
     search,
     cache,
     interactions,
+    unanswered,
     conversation
   };
 }
