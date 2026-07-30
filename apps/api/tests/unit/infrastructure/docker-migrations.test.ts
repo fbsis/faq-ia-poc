@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const repositoryRoot = resolve(process.cwd(), "../..");
+const repositoryRoot = fileURLToPath(new URL("../../../../../", import.meta.url));
 
 describe("Docker database migrations", () => {
   it("blocks development API processes until the migration service succeeds", async () => {
@@ -23,9 +24,7 @@ describe("Docker database migrations", () => {
     ]);
 
     expect(compose).toContain("migrate:");
-    expect(compose).toContain(
-      'command: ["node", "dist/infrastructure/database/migrate.js"]'
-    );
+    expect(compose).toContain('command: ["node", "dist/infrastructure/database/migrate.js"]');
     expect(compose.match(/migrate: \{ condition: service_completed_successfully \}/g)).toHaveLength(
       3
     );
@@ -35,9 +34,7 @@ describe("Docker database migrations", () => {
     expect(dockerfile).toContain(
       "RUN pnpm --filter @faq/contracts build && pnpm --filter @faq/api build"
     );
-    expect(dockerfile).toContain(
-      "RUN pnpm deploy --legacy --filter @faq/api --prod /runtime"
-    );
+    expect(dockerfile).toContain("RUN pnpm deploy --legacy --filter @faq/api --prod /runtime");
     expect(dockerignore).toContain("**/*.tsbuildinfo");
   });
 });
