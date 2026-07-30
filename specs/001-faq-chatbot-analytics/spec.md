@@ -12,17 +12,26 @@
 
 ### User Story 1 - Consultar uma dúvida frequente (Priority: P1)
 
-Como usuário, quero escrever uma pergunta em linguagem natural e receber uma resposta aprovada da base de conhecimento para resolver minha dúvida sem depender de atendimento humano.
+Como usuário, quero conversar em linguagem natural com um assistente que compreende o contexto das
+mensagens anteriores e responde com base no conhecimento aprovado, para resolver minha dúvida sem
+repetir informações nem depender de atendimento humano.
 
 **Why this priority**: É a proposta de valor central e constitui um MVP utilizável de forma independente.
 
-**Independent Test**: Pode ser testada cadastrando respostas conhecidas e enviando perguntas exatas, paráfrases e pequenos erros de digitação para verificar se a resposta correta é apresentada e registrada.
+**Independent Test**: Pode ser testada cadastrando respostas conhecidas, iniciando uma conversa e
+enviando perguntas exatas, paráfrases e perguntas de continuação que dependem das mensagens
+anteriores, verificando que a resposta permanece natural, correta, fundamentada e registrada.
 
 **Acceptance Scenarios**:
 
 1. **Given** que existe uma resposta cadastrada para a dúvida, **When** o usuário envia uma pergunta equivalente, **Then** o chatbot apresenta a resposta correspondente.
 2. **Given** que a pergunta possui redação diferente, mas significado semelhante ao conteúdo cadastrado, **When** o usuário a envia, **Then** o chatbot apresenta a melhor resposta confiável.
 3. **Given** que uma consulta foi concluída, **When** o resultado é apresentado, **Then** a pergunta, o resultado, a categoria e a data e hora ficam registrados no histórico.
+4. **Given** que o usuário já explicou o assunto em mensagens anteriores, **When** envia uma
+   continuação como “e se eu não tiver acesso?”, **Then** o chatbot interpreta a referência usando o
+   contexto recente e responde sem exigir que a pergunta completa seja repetida.
+5. **Given** que uma FAQ aprovada foi encontrada, **When** o chatbot responde, **Then** apresenta uma
+   mensagem natural e direta que não adiciona fatos ausentes da fonte aprovada.
 
 ---
 
@@ -98,6 +107,10 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - Perguntas vazias, compostas apenas por espaços ou acima do limite aceito são rejeitadas com orientação clara.
 - Maiúsculas, acentuação, pontuação e pequenos erros de digitação não impedem a identificação de perguntas equivalentes.
 - Quando duas respostas possuem relevância muito próxima, o chatbot não combina conteúdos incompatíveis nem afirma uma resposta incerta.
+- Instruções presentes em mensagens anteriores ou no texto de uma FAQ não podem substituir as
+  regras do assistente nem autorizar conteúdo fora da base aprovada.
+- Conversas longas utilizam somente uma janela recente e limitada; referências cujo contexto saiu
+  dessa janela recebem pedido de esclarecimento em vez de uma suposição.
 - Entradas inativas ou incompletas nunca são apresentadas como solução.
 - Consultas sem categoria são agrupadas como “Sem categoria” e permanecem nos totais.
 - Alterações na base não modificam retroativamente o conteúdo registrado em interações anteriores.
@@ -142,12 +155,23 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **FR-030**: Resolver uma pendência MUST preservar o estado e o conteúdo das interações históricas originais.
 - **FR-031**: O sistema MUST apresentar erros acionáveis e permitir repetição segura de operações recuperáveis.
 - **FR-032**: O sistema MUST proteger conteúdo administrativo e interações contra acesso não autorizado.
+- **FR-033**: O sistema MUST manter uma janela limitada das mensagens recentes para compreender
+  perguntas de continuação e referências ao contexto da conversa atual.
+- **FR-034**: O sistema MUST transformar perguntas dependentes de contexto em consultas
+  independentes antes de buscar conhecimento, sem alterar a intenção do usuário.
+- **FR-035**: Quando houver uma correspondência confiável, o sistema MUST produzir uma resposta
+  conversacional fundamentada exclusivamente no conteúdo da entrada aprovada e MUST preservar a
+  ligação com essa fonte.
+- **FR-036**: Se a interpretação conversacional ou a geração da resposta falhar, o sistema MUST
+  retornar de forma segura o conteúdo aprovado encontrado ou o fallback, sem inventar informação.
 
 ### Key Entities
 
 - **Entrada de conhecimento**: Pergunta conhecida, formulações equivalentes, resposta, categoria e estado de disponibilidade.
 - **Categoria**: Classificação usada para organizar conteúdo e analisar consultas.
 - **Interação**: Consulta individual com pergunta, resultado, resposta apresentada, categoria, estado e data e hora.
+- **Conversa**: Sequência anônima e limitada de mensagens do usuário e do assistente usada para
+  interpretar continuações durante a sessão.
 - **Pendência de resposta**: Agrupamento de ocorrências equivalentes sem resposta, com estado, frequência, datas e eventual resolução.
 - **Decisão de pendência**: Registro auditável de resolução, descarte ou reabertura realizada por administrador.
 - **Administrador**: Pessoa autorizada a acessar indicadores, pendências e manutenção da base.
@@ -171,11 +195,17 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **SC-012**: Um administrador localiza e responde uma pendência em até 3 minutos, sem recadastrar a pergunta em outra tela.
 - **SC-013**: 100% das resoluções concluídas ficam disponíveis para perguntas futuras sem modificar interações históricas.
 - **SC-014**: Tentativas repetidas ou concorrentes de resolver a mesma pendência criam no máximo uma nova entrada.
+- **SC-015**: Pelo menos 90% das perguntas de continuação do conjunto conversacional de validação
+  recuperam a mesma entrada correta que sua versão independente.
+- **SC-016**: 100% das respostas conversacionais avaliadas permanecem semanticamente suportadas
+  pela entrada aprovada vinculada, sem acrescentar instruções ou fatos externos.
 
 ## Assumptions
 
 - A primeira versão atende uma única organização e usa seu fuso horário configurado.
 - O chatbot é público e não exige identificação pessoal; administradores precisam de autenticação.
+- O contexto conversacional é curto, anônimo e descartável; não é uma memória pessoal nem um perfil
+  permanente do usuário.
 - A organização fornece a base inicial, categorias e canal alternativo de atendimento.
 - O período padrão do dashboard é de 30 dias e pode ser alterado.
 - O agrupamento inicial de pendências utiliza normalização determinística; mesclagem semântica manual ou automática fica fora do escopo inicial.

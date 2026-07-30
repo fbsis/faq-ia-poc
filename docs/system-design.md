@@ -147,28 +147,34 @@ bootstrap layer.
 | Outbox relay | Publishes committed embedding intent to BullMQ | PostgreSQL outbox and queue Redis | Leaves messages pending and reconciles them after queue recovery |
 | BullMQ worker | Loads current FAQ content, creates embeddings, and conditionally activates FAQ versions | Queue Redis, PostgreSQL, and OpenAI | Retries recoverable failures; stale work is a no-op; exhausted resolution work returns the gap to open |
 | Bull Board | Exposes operational queue visibility | BullMQ queue state | Admin-only and read-only in production; never determines business status |
-| OpenAI adapter | Produces 1,536-dimensional embeddings | `text-embedding-3-small` | Uses bounded timeout/retry; semantic-only questions fall back safely when unavailable |
+| OpenAI adapters | Interpret bounded follow-ups, produce grounded conversational answers, and create 1,536-dimensional embeddings | Responses API with `gpt-5.6-luna`; embeddings with `text-embedding-3-small` | Disable response storage; generation failure returns approved text verbatim; semantic-only questions fall back safely |
 
 ## 5. Request and Job Lifecycles
 
 ### 5.1 Public question
 
-1. The web application submits a question of 1–500 characters and an optional category.
-2. The API validates and normalizes the text while retaining the original question for history.
-3. The chat use case loads the current knowledge-base version and checks a hashed, versioned Redis
+1. The web application submits a question of 1–500 characters, an optional category, and at most
+   six recent user/assistant messages.
+2. The API validates the bounded history. When the question depends on prior turns, the
+   conversational adapter rewrites it as a standalone search query without answering it.
+3. The API normalizes the standalone query while retaining the original question for history.
+4. The chat use case loads the current knowledge-base version and checks a hashed, versioned Redis
    key.
-4. On a cache miss, exact matching is attempted. When necessary, OpenAI creates a query embedding
+5. On a cache miss, exact matching is attempted. When necessary, OpenAI creates a query embedding
    and PostgreSQL returns the top five active candidates by cosine similarity.
-5. The retrieval policy applies configurable defaults:
+6. The retrieval policy applies configurable defaults:
    - `>= 0.78`: return the best approved FAQ;
    - `0.70–0.78`: return an ambiguous result without asserting an answer;
    - `< 0.70`: return the unanswered fallback.
-6. If OpenAI is unavailable, exact and PostgreSQL full-text search provide deterministic fallback.
-7. PostgreSQL stores the immutable interaction result, including the answer snapshot when one was
-   shown.
-8. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
+7. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
+   using only that FAQ. Provider failure returns the approved answer verbatim.
+8. If OpenAI embeddings are unavailable, exact and PostgreSQL full-text search provide
+   deterministic fallback.
+9. PostgreSQL stores the immutable interaction result, including both displayed-answer and
+   approved-source snapshots when an answer was shown.
+10. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
    knowledge gap.
-9. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
+11. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
    telemetry.
 
 ### 5.2 FAQ creation or update
@@ -291,8 +297,9 @@ on PostgreSQL state, version checks, unique constraints, and idempotent transiti
 - Login and public chat are rate limited; login errors remain generic.
 - The production Bull Board route is read-only and additionally restricted through a trusted
   network, VPN, or protected reverse proxy.
-- OpenAI receives only normalized text required to create an embedding. It does not receive IP
-  addresses, authentication data, user identity, or conversation history.
+- OpenAI receives only the current question, at most six recent anonymous messages, and the one
+  approved FAQ selected for grounding. It does not receive IP addresses, authentication data, or
+  user identity, and Responses API storage is disabled.
 - API keys and bootstrap credentials exist only in server-side secret configuration.
 - Raw question text, answers, secrets, and personal data are excluded from ordinary logs, queue
   payloads, cache keys, and analytics dimensions.
@@ -361,7 +368,7 @@ and contract tests, production builds, critical Playwright tests, and Docker ima
 |---|---|---|
 | Nx or Turborepo | Build orchestration and caching | Native pnpm workspaces are sufficient for two applications and three small shared packages; added orchestration is not yet justified |
 | NestJS API | Strong framework conventions and dependency injection | Decorators and module ceremony conflict with the small, explicit Hexagonal design |
-| Generative answers | More conversational responses | Introduces hallucination, privacy, and audit risk; approved FAQ text must remain authoritative |
+| Retrieval-only answer rendering | Lowest generation risk | Does not satisfy contextual chatbot behavior; bounded grounded generation preserves the approved FAQ as authority |
 | Synchronous embedding during administrator requests | Simpler request path | Creates slow requests and partial-failure ambiguity; outbox plus BullMQ makes completion durable and observable |
 | One Redis instance for cache and queues | Fewer local services | Cache eviction policy is incompatible with BullMQ's `noeviction` requirement |
 | Custom queue dashboard | Full UI control | Duplicates mature queue tooling and creates another operational interface to secure |
@@ -383,9 +390,11 @@ provides evidence:
 
 ## 12. Decision and Next Steps
 
-The recommended design is the retrieval-only architecture described here: PostgreSQL and pgvector
-as the source of truth, OpenAI embeddings behind a port, fail-open Redis caching, and durable
-outbox-to-BullMQ processing for FAQ activation and knowledge-gap resolution.
+The recommended design is conversational retrieval-augmented generation: PostgreSQL and pgvector
+remain the source of truth, OpenAI conversation and embedding capabilities sit behind independent
+ports, generated responses are grounded in one approved FAQ with a safe verbatim fallback, Redis
+caching fails open, and durable outbox-to-BullMQ processing activates FAQs and resolves knowledge
+gaps.
 
 | Milestone | Deliverable | Exit criteria |
 |---|---|---|

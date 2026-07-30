@@ -6,9 +6,9 @@
 
 ## Summary
 
-Build a pnpm TypeScript monorepo with a React single-page application, a Node.js API, and a BullMQ worker from the same backend codebase. The API applies hexagonal and Clean Architecture around FAQ management, semantic retrieval, unanswered-question triage, interaction recording, authentication, and analytics. PostgreSQL with pgvector is the source of truth, OpenAI produces query and FAQ embeddings, Redis provides a fail-open answer cache, and a separately configured Redis instance persists BullMQ queue state. Bull Board provides an authenticated queue dashboard. The solution uses Docker Compose for local development and separate optimized multi-stage images for production.
+Build a pnpm TypeScript monorepo with a React single-page application, a Node.js API, and a BullMQ worker from the same backend codebase. The API applies hexagonal and Clean Architecture around conversational FAQ orchestration, semantic retrieval, unanswered-question triage, interaction recording, authentication, and analytics. PostgreSQL with pgvector is the source of truth, OpenAI interprets bounded conversation context, produces query and FAQ embeddings, and writes natural answers grounded in approved FAQ content. Redis provides a fail-open retrieval cache, and a separately configured Redis instance persists BullMQ queue state. Bull Board provides an authenticated queue dashboard. The solution uses Docker Compose for local development and separate optimized multi-stage images for production.
 
-The implementation favors KISS and SOLID through explicit ports, small use cases, dependency inversion, English identifiers, and few shared packages. It does not use generative answers: the AI integration ranks approved FAQ content, and low-confidence searches return a safe fallback.
+The implementation favors KISS and SOLID through explicit ports, small use cases, dependency inversion, English identifiers, and few shared packages. The conversational model may rephrase an approved answer for clarity, but it cannot answer from model knowledge: low-confidence searches return a safe fallback and provider failures fall back to the exact approved text.
 
 ## Technical Context
 
@@ -16,7 +16,7 @@ The implementation favors KISS and SOLID through explicit ports, small use cases
 
 **Primary Dependencies**: pnpm 10 workspaces; Fastify; Drizzle ORM with `pg`; OpenAI Node SDK; BullMQ 5 with ioredis; `@bull-board/api` and `@bull-board/fastify`; Redis client; Zod; React 19; Vite; React Router; TanStack Query; React Hook Form; shadcn/ui with Tailwind CSS and Recharts
 
-**Storage**: PostgreSQL with pgvector (`vector(1536)`), dedicated Redis cache, dedicated persistent Redis queue store, immutable interaction snapshots
+**Storage**: PostgreSQL with pgvector (`vector(1536)`), dedicated Redis cache, dedicated persistent Redis queue store, immutable displayed-answer and approved-source snapshots
 
 **Testing**: Vitest with V8 coverage, Fastify `inject`, React Testing Library, user-event, MSW, Testcontainers for PostgreSQL/pgvector and Redis, Playwright for critical end-to-end paths
 
@@ -26,7 +26,7 @@ The implementation favors KISS and SOLID through explicit ports, small use cases
 
 **Performance Goals**: 95% of answered searches visible within 2 seconds; dashboard for up to 12 months visible within 3 seconds for 95% of loads; analytics updated within 1 minute
 
-**Constraints**: At least 90% correct top result on the labeled retrieval set; no fabricated answers; 100 concurrent chat sessions; cache Redis failure must not break chat; BullMQ jobs are at-least-once and therefore idempotent; queue dashboard is admin-only and read-only in production; optimized production images; no secrets or raw FAQ content in queue payloads, browser bundles, logs, or repository
+**Constraints**: At least 90% correct top result on the labeled retrieval set; generated text must be grounded in one approved FAQ; at most six recent messages are sent for conversational context; OpenAI response storage is disabled; 100 concurrent chat sessions; cache Redis failure must not break chat; BullMQ jobs are at-least-once and therefore idempotent; queue dashboard is admin-only and read-only in production; optimized production images; no secrets or raw FAQ content in queue payloads, browser bundles, logs, or repository
 
 **Scale/Scope**: Single organization MVP; public anonymous chat; one administrator role; five main capabilities (chat, unanswered-question triage, FAQ administration, analytics, authentication); 100 concurrent sessions; initial FAQ corpus expected below 100,000 entries
 
@@ -67,25 +67,32 @@ HTTP / PostgreSQL / Redis / OpenAI adapters
 
 ### Retrieval flow
 
-1. Validate and normalize the question while retaining the original text for the interaction record.
-2. Check a versioned Redis key derived from the normalized question.
-3. On a miss, create an OpenAI embedding using `text-embedding-3-small` with 1536 dimensions.
-4. Retrieve the top five active FAQ candidates using cosine similarity in pgvector.
-5. Accept exact normalized matches immediately; otherwise apply configurable thresholds:
+1. Validate a maximum of six recent user/assistant messages and the current question.
+2. When context exists, ask the conversational model to rewrite the current message as a
+   standalone search question without answering it.
+3. Normalize that query while retaining the original text for the interaction record.
+4. Check a versioned Redis key derived from the normalized standalone query.
+5. On a miss, create an OpenAI embedding using `text-embedding-3-small` with 1536 dimensions.
+6. Retrieve the top five active FAQ candidates using cosine similarity in pgvector.
+7. Accept exact normalized matches immediately; otherwise apply configurable thresholds:
    - `>= 0.78`: answer with the best approved FAQ.
    - `0.70–0.78`: do not claim a definitive answer; invite rephrasing and optionally show approved suggestions.
    - `< 0.70`: record as unanswered and show the fallback channel.
-6. Cache successful answers for 15 minutes with jitter and unanswered results for at most 2 minutes.
-7. Always persist the interaction snapshot, including cache hits.
+8. Cache successful retrievals for 15 minutes with jitter and unanswered results for at most 2 minutes.
+9. For an accepted FAQ, ask the conversational model for a concise Portuguese response using only
+   the selected question and answer. If generation fails, display the approved answer verbatim.
+10. Always persist the displayed response and approved-source snapshots, including cache hits.
 
 Thresholds are configuration defaults, not permanent truth. They must be calibrated against Portuguese paraphrases, typos, acronyms, and unrelated questions before release. PostgreSQL full-text search is the deterministic fallback when OpenAI is unavailable; hybrid ranking can be added only if evaluation proves it necessary.
 
 ### Failure and privacy rules
 
 - Redis errors fail open and are never cached as application errors.
-- OpenAI calls use bounded retry with exponential backoff and jitter; after repeated failures, the system uses exact/full-text fallback and never fabricates an answer.
+- OpenAI calls use bounded retry; interpretation failure uses the original question, retrieval failure uses exact/full-text fallback, and response-generation failure returns the approved FAQ verbatim.
 - PostgreSQL failure returns a stable service error; the system never claims to have recorded an interaction it could not persist.
-- Only normalized question text required for embedding is sent to OpenAI. User identifiers, IP addresses, authentication data, and conversation history are excluded.
+- Only the current question, at most six recent anonymous messages, and one selected approved FAQ
+  are sent to OpenAI. User identifiers, IP addresses, and authentication data are excluded, and
+  Responses API storage is disabled.
 - The OpenAI key exists only in server-side secret configuration.
 - Raw question text is not written to ordinary application logs.
 - FAQ changes increment a knowledge-base version after commit; versioned cache keys provide safe invalidation.

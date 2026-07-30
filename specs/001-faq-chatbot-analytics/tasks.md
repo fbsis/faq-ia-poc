@@ -409,7 +409,7 @@ Task T128: knowledge-gap administration UI tests
 1. Complete Phase 1 and Phase 2.
 2. Complete Phase 3 (US1).
 3. Seed an active FAQ and run the independent answered-chat test.
-4. Stop and demonstrate the retrieval-only chatbot before expanding scope.
+4. Stop and demonstrate the grounded contextual chatbot before expanding scope.
 
 ### Incremental Delivery
 
@@ -438,3 +438,25 @@ Task T128: knowledge-gap administration UI tests
 - Normal CI uses deterministic OpenAI test doubles and never calls the live API.
 - Production Bull Board is authenticated, restricted, redacted, and read-only.
 - Stop at any checkpoint to validate the story independently.
+
+---
+
+## Phase 9: Conversational Chat Correction
+
+**Purpose**: Correct the MVP so it behaves as a contextual chatbot rather than a FAQ search screen.
+
+### Tests
+
+- [ ] T159 [US1] Add bounded conversation-history request contract tests in `packages/contracts/src/chat.test.ts`
+- [ ] T160 [US1] Add contextual query, grounded response, and safe generation fallback tests in `apps/api/tests/unit/chat/ask-question.test.ts`
+- [ ] T161 [US1] Add follow-up history transmission and natural answer rendering tests in `apps/web/tests/integration/chat/chat-page.test.tsx`
+
+### Implementation
+
+- [ ] T162 [US1] Extend shared chat contracts with a bounded anonymous message history in `packages/contracts/src/chat.ts`
+- [ ] T163 [US1] Define the conversation port and implement stateless OpenAI Responses adapters in `apps/api/src/modules/chat/application/ports.ts` and `apps/api/src/modules/chat/adapters/outbound/openai-conversation-agent.ts`
+- [ ] T164 [US1] Rewrite contextual queries, ground natural answers, persist source snapshots, and wire runtime configuration in `apps/api/src/modules/chat/application/ask-question.ts`, `apps/api/src/modules/chat/domain/interaction.ts`, `apps/api/src/modules/chat/adapters/outbound/postgres-interaction-repository.ts`, `apps/api/src/infrastructure/database/migrations/0002_conversational_answers.sql`, `apps/api/src/infrastructure/database/schema.ts`, `apps/api/src/infrastructure/config/environment.ts`, and `apps/api/src/bootstrap/build-application.ts`
+- [ ] T165 [US1] Send bounded completed turns and render the grounded assistant response in `apps/web/src/features/chat/use-ask-question.ts` and `apps/web/src/features/chat/chat-message.tsx`
+
+**Checkpoint**: A user can ask a follow-up that depends on recent turns and receive a natural
+answer grounded in one approved FAQ; generation failure exposes only the approved source text.

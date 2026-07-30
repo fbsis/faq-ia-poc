@@ -100,6 +100,7 @@ Represents one chat query and its immutable outcome.
 | `faq_entry_id` | UUID | Nullable historical reference |
 | `category_id` | UUID | Nullable historical reference |
 | `answer_snapshot` | text | Required only when answered |
+| `source_answer_snapshot` | text | Required only when answered; immutable approved FAQ text used to ground the displayed answer |
 | `question_snapshot` | text | Nullable matched FAQ question |
 | `similarity_score` | decimal | Nullable, constrained to 0–1 |
 | `threshold_version` | text | Required when semantic ranking ran |
@@ -111,7 +112,7 @@ Represents one chat query and its immutable outcome.
 
 Validation:
 
-- `answered` requires `answer_snapshot`, an FAQ reference, and a category snapshot/reference.
+- `answered` requires displayed `answer_snapshot`, approved `source_answer_snapshot`, an FAQ reference, and a category snapshot/reference.
 - `unanswered` and `ambiguous` must not contain an asserted answer.
 - `failed` stores no false success and uses a stable failure code.
 - Updates are not allowed after insertion except approved retention/redaction operations.

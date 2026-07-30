@@ -7,7 +7,7 @@ This guide describes how to validate the planned system after implementation. It
 - Docker Engine with Docker Compose 2.22 or newer
 - Node.js 24 LTS
 - Corepack-enabled pnpm 10
-- An OpenAI API key with embeddings access
+- An OpenAI API key with embeddings and Responses API access
 
 ## Configuration
 
@@ -80,6 +80,18 @@ Expected outcomes:
 5. Ask the exact question in the public chat and confirm the approved answer appears.
 6. Ask a paraphrase and confirm the same answer appears.
 7. Edit the answer, wait for re-embedding, and confirm new chats receive the new answer while old interaction details retain the old snapshot.
+
+## Validate a contextual conversation
+
+1. Start with “Como redefino minha senha?” and confirm the assistant answers naturally from the
+   approved FAQ.
+2. Continue with a context-dependent question such as “e se eu não tiver acesso ao meu e-mail?”.
+3. Confirm the request carries no more than six recent messages and retrieval uses a standalone
+   interpretation of the follow-up.
+4. Confirm the answer is supported by one approved FAQ and the interaction stores both the exact
+   displayed response and its approved source snapshot.
+5. Disable the conversational provider after retrieval and confirm the user receives the approved
+   FAQ text verbatim rather than an invented response.
 8. Deactivate the FAQ and confirm it is no longer returned.
 
 ## Validate unanswered behavior

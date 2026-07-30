@@ -604,6 +604,22 @@ components:
         categoryId:
           type: string
           format: uuid
+        history:
+          type: array
+          maxItems: 6
+          description: Recent anonymous messages in chronological order.
+          items:
+            type: object
+            additionalProperties: false
+            required: [role, content]
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+                minLength: 1
+                maxLength: 1000
     AskQuestionResponse:
       type: object
       required: [interactionId, status, message]
@@ -618,6 +634,7 @@ components:
           type: string
         answer:
           type: string
+          description: Natural assistant response grounded in the matched approved FAQ.
         matchedQuestion:
           type: string
         category:

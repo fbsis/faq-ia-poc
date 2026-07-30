@@ -50,11 +50,22 @@
 
 ## OpenAI responsibility and failure behavior
 
-**Decision**: OpenAI generates embeddings only. Responses always come from active, administrator-approved FAQ entries.
+**Decision**: Use the Responses API with `store: false` behind a `ConversationAgent` port. For
+turns with recent context, OpenAI first rewrites the latest message as a standalone search query.
+After retrieval accepts one active FAQ, OpenAI produces a concise natural response using only that
+FAQ as its factual source. Use `gpt-5.6-luna` as the default high-volume conversational model and
+keep embeddings on `text-embedding-3-small`.
 
-**Rationale**: Retrieval-only AI preserves auditability, avoids hallucinations, and directly satisfies the known-answer FAQ use case.
+**Rationale**: A chatbot must understand follow-up messages and respond conversationally, while
+retrieval remains the authority boundary. A maximum of six recent messages keeps context bounded.
+The displayed response and approved source are both snapshotted for auditability. OpenAI documents
+the Responses API for multi-turn workflows and identifies the Luna variant as the efficient
+high-volume option.
 
-**Alternatives considered**: Generating or rewriting answers could improve conversational tone but creates correctness, privacy, and audit risks outside the approved scope.
+**Alternatives considered**: Retrieval-only output is safer but is not a conversational chatbot.
+Persisted OpenAI Conversations simplify state management but retain conversation objects beyond the
+response TTL. The selected stateless request (`store: false`) keeps the application in control of a
+small anonymous context window. A fully autonomous agent is unnecessary for bounded FAQ lookup.
 
 ## Redis caching
 
@@ -155,6 +166,8 @@
 ## Sources
 
 - [OpenAI embeddings guide](https://developers.openai.com/api/docs/guides/embeddings#how-to-get-embeddings)
+- [OpenAI conversation state guide](https://developers.openai.com/api/docs/guides/conversation-state)
+- [OpenAI latest model guide](https://developers.openai.com/api/docs/guides/latest-model)
 - [pgvector](https://github.com/pgvector/pgvector)
 - [pnpm workspaces](https://pnpm.io/workspaces)
 - [Fastify validation](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/)
