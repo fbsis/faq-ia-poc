@@ -60,7 +60,7 @@ export function useAskQuestion() {
     runTurn(trimmedQuestion, turnId, history, onSuccess);
   }
 
-  function retry(turnId?: string) {
+  function retry(turnId?: string, onSuccess?: () => void) {
     const turn = turnId
       ? turns.find((candidate) => candidate.id === turnId)
       : [...turns].reverse().find((candidate) => candidate.status === "error");
@@ -72,7 +72,7 @@ export function useAskQuestion() {
         candidate.id === turn.id ? { ...candidate, status: "pending" } : candidate
       )
     );
-    runTurn(turn.question, turn.id, history);
+    runTurn(turn.question, turn.id, history, onSuccess);
   }
 
   return { ...mutation, submit, retry, turns };

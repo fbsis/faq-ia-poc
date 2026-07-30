@@ -5,6 +5,7 @@ import type { FaqCandidate } from "../domain/faq-candidate.js";
 import type { CacheStatus, Interaction } from "../domain/interaction.js";
 import { normalizeQuestion } from "../domain/normalize-question.js";
 import { decideRetrieval, type RetrievalDecision } from "../domain/retrieval-policy.js";
+import type { UnansweredInteractionRecorder } from "../../knowledge-gaps/application/ports.js";
 import type {
   AnswerCache,
   CachedAnswer,
@@ -14,11 +15,13 @@ import type {
   InteractionRepository,
   KnowledgeVersion
 } from "./ports.js";
+import { QuestionProcessingUnavailableError } from "./question-processing-unavailable-error.js";
 
 interface AskQuestionDependencies {
   search: FaqSearch;
   cache: AnswerCache;
   interactions: InteractionRepository;
+  unanswered: UnansweredInteractionRecorder;
   embeddings: EmbeddingProvider;
   conversation: ConversationAgent;
   knowledgeVersion: KnowledgeVersion;
@@ -182,7 +185,15 @@ export class AskQuestion {
       cacheStatus,
       createdAt: this.dependencies.clock.now()
     };
-    await this.dependencies.interactions.save(interaction);
+    try {
+      if (interaction.outcome === "answered") {
+        await this.dependencies.interactions.save(interaction);
+      } else {
+        await this.dependencies.unanswered.record(interaction);
+      }
+    } catch (error) {
+      throw new QuestionProcessingUnavailableError({ cause: error });
+    }
     return interaction.id;
   }
 }

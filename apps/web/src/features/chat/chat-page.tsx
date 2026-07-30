@@ -84,7 +84,11 @@ export function ChatPage() {
                     <p className="mt-1 text-sm text-red-800">
                       Sua pergunta foi mantida. Tente novamente quando quiser.
                     </p>
-                    <Button className="mt-3" onClick={() => ask.retry(turn.id)} variant="ghost">
+                    <Button
+                      className="mt-3"
+                      onClick={() => ask.retry(turn.id, () => setQuestion(""))}
+                      variant="ghost"
+                    >
                       Tentar novamente
                     </Button>
                   </div>

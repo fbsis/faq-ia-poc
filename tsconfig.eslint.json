@@ -5,5 +5,5 @@
     "composite": false,
     "noEmit": true
   },
-  "include": ["apps/**/*", "packages/**/*", "*.js", "*.ts"]
+  "include": ["apps/**/*", "packages/**/*", "tests/**/*", "*.js", "*.ts"]
 }

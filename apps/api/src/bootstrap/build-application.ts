@@ -39,11 +39,16 @@ import type {
 } from "../modules/chat/application/ports.js";
 import type { FaqCandidate } from "../modules/chat/domain/faq-candidate.js";
 import type { Interaction } from "../modules/chat/domain/interaction.js";
+import { PostgresUnansweredRecorder } from "../modules/knowledge-gaps/adapters/outbound/postgres-unanswered-recorder.js";
+import type { UnansweredInteractionRecorder } from "../modules/knowledge-gaps/application/ports.js";
 import { randomIds, systemClock } from "../shared/domain/ports.js";
 
 export interface BuildApplicationOptions {
   mode?: "test" | "runtime";
   environment?: Environment;
+  testOverrides?: {
+    failInteractionRecording?: boolean;
+  };
 }
 
 export type Application = FastifyInstance & { environment: Environment };
@@ -77,7 +82,7 @@ export async function buildApplication(
 
   const resources =
     options.mode === "test"
-      ? await createTestResources(environment)
+      ? await createTestResources(environment, options.testOverrides)
       : createRuntimeResources(environment);
 
   const login = new Login(
@@ -120,6 +125,7 @@ interface Resources {
     search: FaqSearch;
     cache: AnswerCache;
     interactions: InteractionRepository;
+    unanswered: UnansweredInteractionRecorder;
     embeddings: EmbeddingProvider;
     conversation: ConversationAgent;
     knowledgeVersion: KnowledgeVersion;
@@ -147,6 +153,7 @@ function createRuntimeResources(environment: Environment): Resources {
       search: new PostgresFaqSearch(pool),
       cache: new RedisAnswerCache(cache),
       interactions: new PostgresInteractionRepository(pool),
+      unanswered: new PostgresUnansweredRecorder(pool),
       embeddings,
       conversation,
       knowledgeVersion: new PostgresKnowledgeVersion(pool)
@@ -157,7 +164,10 @@ function createRuntimeResources(environment: Environment): Resources {
   };
 }
 
-async function createTestResources(environment: Environment): Promise<Resources> {
+async function createTestResources(
+  environment: Environment,
+  overrides?: BuildApplicationOptions["testOverrides"]
+): Promise<Resources> {
   const passwords = new ScryptPasswordHasher();
   const admin: Admin = {
     id: "00000000-0000-4000-8000-000000000001",
@@ -173,6 +183,7 @@ async function createTestResources(environment: Environment): Promise<Resources>
       search: new MemoryFaqSearch(),
       cache: new MemoryAnswerCache(),
       interactions: new MemoryInteractionRepository(),
+      unanswered: new MemoryUnansweredRecorder(overrides?.failInteractionRecording),
       embeddings: new DeterministicEmbeddingProvider(),
       conversation: deterministicConversationAgent,
       knowledgeVersion: { current: () => Promise.resolve(1) }
@@ -233,12 +244,19 @@ const testFaq: FaqCandidate = {
 };
 
 class MemoryFaqSearch implements FaqSearch {
+  private normalizedQuestion = "";
+
   findExact(normalizedQuestion: string): Promise<FaqCandidate | null> {
+    this.normalizedQuestion = normalizedQuestion;
     return Promise.resolve(normalizedQuestion === "como redefino minha senha" ? testFaq : null);
   }
 
   findSemantic(): Promise<FaqCandidate[]> {
-    return Promise.resolve([{ ...testFaq, confidence: 0.82 }]);
+    return Promise.resolve(
+      this.normalizedQuestion === "nao consigo acessar minha conta"
+        ? [{ ...testFaq, confidence: 0.74 }]
+        : []
+    );
   }
 
   findFullText(): Promise<FaqCandidate[]> {
@@ -263,6 +281,18 @@ class MemoryInteractionRepository implements InteractionRepository {
   readonly values: Interaction[] = [];
 
   save(interaction: Interaction): Promise<void> {
+    this.values.push(interaction);
+    return Promise.resolve();
+  }
+}
+
+class MemoryUnansweredRecorder implements UnansweredInteractionRecorder {
+  readonly values: Interaction[] = [];
+
+  constructor(private readonly fail = false) {}
+
+  record(interaction: Interaction): Promise<void> {
+    if (this.fail) return Promise.reject(new Error("database unavailable"));
     this.values.push(interaction);
     return Promise.resolve();
   }

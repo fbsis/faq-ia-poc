@@ -138,23 +138,23 @@ two unanswered interactions exist, and one open gap links both occurrences.
 
 ### Tests for User Story 2
 
-- [ ] T063 [P] [US2] Add knowledge-gap grouping, recurrence, and immutable-history domain tests in `apps/api/tests/unit/knowledge-gaps/group-unanswered.test.ts`
-- [ ] T064 [P] [US2] Add low-confidence, provider-failure, database-failure, and safe-fallback use-case tests in `apps/api/tests/unit/chat/unanswered-question.test.ts`
-- [ ] T065 [P] [US2] Add atomic interaction insertion and knowledge-gap upsert integration tests in `apps/api/tests/integration/knowledge-gaps/postgres-grouping.test.ts`
-- [ ] T066 [P] [US2] Add deterministic fallback behavior under OpenAI and cache outages in `apps/api/tests/integration/chat/retrieval-failures.test.ts`
-- [ ] T067 [P] [US2] Extend chat HTTP contract tests for unanswered, ambiguous, invalid, and unavailable responses in `apps/api/tests/contract/chat.routes.test.ts`
-- [ ] T068 [P] [US2] Add fallback guidance, input preservation, and retry UI tests in `apps/web/tests/integration/chat/unanswered-chat.test.tsx`
+- [X] T063 [P] [US2] Add knowledge-gap grouping, recurrence, and immutable-history domain tests in `apps/api/tests/unit/knowledge-gaps/group-unanswered.test.ts`
+- [X] T064 [P] [US2] Add low-confidence, provider-failure, database-failure, and safe-fallback use-case tests in `apps/api/tests/unit/chat/unanswered-question.test.ts`
+- [X] T065 [P] [US2] Add atomic interaction insertion and knowledge-gap upsert integration tests in `apps/api/tests/integration/knowledge-gaps/postgres-grouping.test.ts`
+- [X] T066 [P] [US2] Add deterministic fallback behavior under OpenAI and cache outages in `apps/api/tests/integration/chat/retrieval-failures.test.ts`
+- [X] T067 [P] [US2] Extend chat HTTP contract tests for unanswered, ambiguous, invalid, and unavailable responses in `apps/api/tests/contract/chat.routes.test.ts`
+- [X] T068 [P] [US2] Add fallback guidance, input preservation, and retry UI tests in `apps/web/tests/integration/chat/unanswered-chat.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T069 [P] [US2] Define KnowledgeGap grouping and recurrence domain rules in `apps/api/src/modules/knowledge-gaps/domain/knowledge-gap.ts`
-- [ ] T070 [P] [US2] Declare atomic unanswered-interaction and gap-grouping ports in `apps/api/src/modules/knowledge-gaps/application/ports.ts`
-- [ ] T071 [US2] Implement transactional gap upsert and interaction linking in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-unanswered-recorder.ts`
-- [ ] T072 [US2] Extend question orchestration with safe unanswered, ambiguous, and failed outcomes in `apps/api/src/modules/chat/application/ask-question.ts`
-- [ ] T073 [US2] Map stable recovery guidance and service errors in `apps/api/src/modules/chat/adapters/inbound/http/chat-routes.ts`
-- [ ] T074 [P] [US2] Render unanswered guidance and approved suggestions in `apps/web/src/features/chat/unanswered-message.tsx`
-- [ ] T075 [US2] Preserve the submitted question and expose safe retry state in `apps/web/src/features/chat/use-ask-question.ts`
-- [ ] T076 [US2] Add the answered, ambiguous, unanswered, and recoverable-error Playwright journey in `tests/e2e/chat.spec.ts`
+- [X] T069 [P] [US2] Define KnowledgeGap grouping and recurrence domain rules in `apps/api/src/modules/knowledge-gaps/domain/knowledge-gap.ts`
+- [X] T070 [P] [US2] Declare atomic unanswered-interaction and gap-grouping ports in `apps/api/src/modules/knowledge-gaps/application/ports.ts`
+- [X] T071 [US2] Implement transactional gap upsert and interaction linking in `apps/api/src/modules/knowledge-gaps/adapters/outbound/postgres-unanswered-recorder.ts`
+- [X] T072 [US2] Extend question orchestration with safe unanswered, ambiguous, and failed outcomes in `apps/api/src/modules/chat/application/ask-question.ts`
+- [X] T073 [US2] Map stable recovery guidance and service errors in `apps/api/src/modules/chat/adapters/inbound/http/chat-routes.ts`
+- [X] T074 [P] [US2] Render unanswered guidance and approved suggestions in `apps/web/src/features/chat/unanswered-message.tsx`
+- [X] T075 [US2] Preserve the submitted question and expose safe retry state in `apps/web/src/features/chat/use-ask-question.ts`
+- [X] T076 [US2] Add the answered, ambiguous, unanswered, and recoverable-error Playwright journey in `tests/e2e/chat.spec.ts`
 
 **Checkpoint**: Unknown questions are safe, auditable, grouped deterministically, and independently
 visible in storage.

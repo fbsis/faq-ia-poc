@@ -17,12 +17,14 @@
     "test": "vitest run --coverage",
     "test:unit": "vitest run --exclude '**/integration/**'",
     "test:integration": "RUN_INTEGRATION=true vitest run '**/integration/**'",
+    "test:e2e": "playwright test",
     "test:watch": "vitest",
     "db:migrate": "pnpm --filter @faq/api db:migrate",
     "db:seed": "pnpm --filter @faq/api db:seed"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

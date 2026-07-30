@@ -1,37 +1,32 @@
 import type { AskQuestionResponse } from "@faq/contracts";
-import { Bot, CheckCircle2, HelpCircle, UserRound } from "lucide-react";
+import { Bot, CheckCircle2, UserRound } from "lucide-react";
 import { MarkdownMessage } from "./markdown-message.js";
+import { UnansweredMessage } from "./unanswered-message.js";
 
 export function ChatMessage({ result }: { result: AskQuestionResponse }) {
-  const answered = result.status === "answered";
   return (
     <article className="flex max-w-[88%] items-end gap-3 self-start">
       <AssistantAvatar />
       <div>
         <p className="mb-1 ml-1 text-xs font-semibold text-slate-500">Assistente FAQ</p>
-        <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            {answered ? (
+        {result.status === "answered" ? (
+          <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <CheckCircle2 aria-hidden className="text-teal-700" size={17} />
-            ) : (
-              <HelpCircle aria-hidden className="text-amber-600" size={17} />
-            )}
-            <span className="text-sm font-semibold text-slate-700">
-              {answered ? "Resposta baseada na FAQ aprovada" : "Vamos confirmar"}
-            </span>
-            {result.category ? (
-              <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
-                {result.category.name}
+              <span className="text-sm font-semibold text-slate-700">
+                Resposta baseada na FAQ aprovada
               </span>
-            ) : null}
+              {result.category ? (
+                <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
+                  {result.category.name}
+                </span>
+              ) : null}
+            </div>
+            <MarkdownMessage>{result.answer ?? result.message}</MarkdownMessage>
           </div>
-          <MarkdownMessage>{result.answer ?? result.message}</MarkdownMessage>
-          {result.suggestions?.map((suggestion) => (
-            <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm" key={suggestion}>
-              {suggestion}
-            </p>
-          ))}
-        </div>
+        ) : (
+          <UnansweredMessage result={result} />
+        )}
       </div>
     </article>
   );
