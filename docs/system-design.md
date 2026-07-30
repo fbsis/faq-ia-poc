@@ -9,6 +9,7 @@
 | Scope | Single-organization FAQ chatbot, administration, and analytics MVP |
 | Primary specification | [Feature specification](../specs/001-faq-chatbot-analytics/spec.md) |
 | Implementation plan | [Implementation plan](../specs/001-faq-chatbot-analytics/plan.md) |
+| Chat behavior | [Chat experience and retrieval](chat-experience-and-retrieval.md) |
 | API contract | [OpenAPI 3.1 contract](../specs/001-faq-chatbot-analytics/contracts/openapi.yaml) |
 | Queue contract | [FAQ embedding jobs](../specs/001-faq-chatbot-analytics/contracts/queue-jobs.md) |
 | Data model | [Domain and persistence model](../specs/001-faq-chatbot-analytics/data-model.md) |
@@ -20,13 +21,15 @@ The FAQ Intelligence Platform automates answers to recurring questions and gives
 visibility into demand, unanswered topics, and knowledge-base quality. A public React application
 sends natural-language questions to a Node.js API. The API returns only active,
 administrator-approved FAQ content, using PostgreSQL exact and full-text search plus pgvector
-semantic similarity. OpenAI generates embeddings; it does not generate user-facing answers.
+semantic similarity and trigram word matching. OpenAI creates embeddings, resolves bounded
+conversation context, and produces natural responses grounded in one approved FAQ.
 
 PostgreSQL is the business source of truth. A disposable Redis instance accelerates repeated
 queries, while a separate persistent Redis instance stores BullMQ operational state. FAQ
 embedding work is committed through a PostgreSQL outbox, relayed to BullMQ, and completed by an
-idempotent worker. Low-confidence questions produce a safe fallback and become durable,
-administratively resolvable knowledge gaps.
+idempotent worker. Low-confidence questions receive a contextual clarification without factual
+claims and become durable, administratively resolvable knowledge gaps. Assistant messages support
+safe Markdown without raw HTML execution.
 
 The application is a pnpm TypeScript monorepo with a React/Vite frontend, a Fastify API, Docker
 development and production environments, and independently runnable API, relay, and worker
@@ -52,7 +55,7 @@ processes.
 
 ### Non-goals
 
-- Generative or rewritten answers from an AI model.
+- Answers based on unapproved model knowledge or more than one FAQ source.
 - Human-agent conversations inside the platform.
 - Report export.
 - Multiple organizations or tenant isolation.
@@ -95,7 +98,7 @@ flowchart LR
     Outbox["Outbox relay"]
     Queue[("Redis queue store<br/>AOF + noeviction")]
     Worker["BullMQ embedding worker"]
-    OpenAI["OpenAI Embeddings API"]
+    OpenAI["OpenAI Responses + Embeddings APIs"]
     Board["Bull Board<br/>Admin-only, read-only in production"]
     Obs["Structured logs and metrics"]
 
@@ -140,7 +143,7 @@ bootstrap layer.
 
 | Component | Responsibility | Primary state or dependency | Failure behavior |
 |---|---|---|---|
-| React web application | Public chat, administrator login, analytics, FAQ maintenance, and knowledge-gap workflow | Versioned `/api/v1` HTTP contract | Preserves user input, distinguishes loading/empty/error states, and offers safe retry |
+| React web application | Public chat with safe Markdown, administrator login, analytics, FAQ maintenance, and knowledge-gap workflow | Versioned `/api/v1` HTTP contract | Preserves user input, distinguishes loading/empty/error states, and offers safe retry |
 | Fastify API | Validates requests, authorizes administrators, executes use cases, and returns stable errors | PostgreSQL, cache, and declared service ports | Fails closed for protected operations; never claims an interaction was recorded when its write failed |
 | PostgreSQL with pgvector | Stores knowledge, vectors, interactions, gaps, sessions, audit events, and outbox messages | Durable transactional storage | Required writes fail the request; committed outbox work remains recoverable |
 | Redis answer cache | Caches versioned positive and short-lived negative retrieval results | Disposable cache instance | Fails open and falls back to PostgreSQL/OpenAI retrieval |
@@ -160,22 +163,30 @@ bootstrap layer.
 3. The API normalizes the standalone query while retaining the original question for history.
 4. The chat use case loads the current knowledge-base version and checks a hashed, versioned Redis
    key.
-5. On a cache miss, exact matching is attempted. When necessary, OpenAI creates a query embedding
-   and PostgreSQL returns the top five active candidates by cosine similarity.
-6. The retrieval policy applies configurable defaults:
+5. On a cache miss, exact canonical-question and alias matching is attempted first.
+6. For every non-exact query, semantic pgvector retrieval and Portuguese lexical/fuzzy retrieval
+   run concurrently. Lexical retrieval searches canonical questions, aliases, and approved answers
+   using stemming and trigram similarity for related words and small typing errors.
+7. Results are merged by FAQ identity, retaining the strongest confidence for each candidate.
+   The retrieval policy then applies configurable defaults:
    - `>= 0.78`: return the best approved FAQ;
    - `0.70–0.78`: return an ambiguous result without asserting an answer;
-   - `< 0.70`: return the unanswered fallback.
-7. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
+   - `< 0.70`: record the question as unanswered.
+8. If retrieval accepts an FAQ, the conversational adapter writes a natural Portuguese response
    using only that FAQ. Provider failure returns the approved answer verbatim.
-8. If OpenAI embeddings are unavailable, exact and PostgreSQL full-text search provide
-   deterministic fallback.
-9. PostgreSQL stores the immutable interaction result, including both displayed-answer and
-   approved-source snapshots when an answer was shown.
-10. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
-   knowledge gap.
-11. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
-   telemetry.
+9. If no candidate is reliable, the conversational adapter acknowledges the specific doubt and
+   asks one useful clarification without answering from general model knowledge. Provider failure
+   returns deterministic reformulation guidance.
+10. Assistant responses are rendered as GitHub-Flavored Markdown. Raw HTML processing is disabled,
+    and links open with `noopener` and `noreferrer`.
+11. If OpenAI embeddings are unavailable, exact and PostgreSQL lexical/fuzzy search remain
+    available as deterministic retrieval paths.
+12. PostgreSQL stores the immutable interaction result, including both displayed-answer and
+    approved-source snapshots when an answer was shown.
+13. Unanswered and ambiguous outcomes are atomically linked to a deterministically grouped
+    knowledge gap.
+14. The API returns the result and emits correlation-aware latency, outcome, retrieval, and cache
+    telemetry.
 
 ### 5.2 FAQ creation or update
 

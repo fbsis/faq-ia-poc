@@ -89,7 +89,10 @@ HTTP / PostgreSQL / Redis / OpenAI adapters
 12. Render assistant Markdown without enabling raw HTML and always persist the displayed response
     and approved-source snapshots, including cache hits.
 
-Thresholds are configuration defaults, not permanent truth. They must be calibrated against Portuguese paraphrases, typos, acronyms, and unrelated questions before release. PostgreSQL full-text search is the deterministic fallback when OpenAI is unavailable; hybrid ranking can be added only if evaluation proves it necessary.
+Thresholds are configuration defaults, not permanent truth. They must be calibrated against
+Portuguese paraphrases, typos, acronyms, and unrelated questions before release. PostgreSQL
+lexical/fuzzy retrieval is the deterministic path when OpenAI embeddings are unavailable; the
+implemented hybrid merge keeps the strongest evidence per FAQ without blending answer content.
 
 ### Failure and privacy rules
 
