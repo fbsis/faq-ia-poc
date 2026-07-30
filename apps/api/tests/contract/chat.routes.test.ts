@@ -19,6 +19,23 @@ describe("POST /api/v1/chat/questions", () => {
     await app.close();
   });
 
+  it("answers the same FAQ when Portuguese wording adds a neutral article", async () => {
+    const app = await buildApplication({ mode: "test" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/chat/questions",
+      payload: { question: "Como redefino a minha senha?" }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(askQuestionResponseSchema.parse(response.json())).toMatchObject({
+      status: "answered",
+      answer: "Na tela de login, selecione “Esqueci minha senha”.",
+      matchedQuestion: "Como redefino minha senha?"
+    });
+    await app.close();
+  });
+
   it("returns the shared validation envelope for an empty question", async () => {
     const app = await buildApplication({ mode: "test" });
     const response = await app.inject({

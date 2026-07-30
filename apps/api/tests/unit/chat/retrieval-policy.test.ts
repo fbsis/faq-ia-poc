@@ -18,6 +18,15 @@ describe("FAQ retrieval policy", () => {
     );
   });
 
+  it("treats an optional article before a possessive as the same FAQ wording", () => {
+    expect(normalizeQuestion("Como redefino a minha senha?")).toBe(
+      normalizeQuestion("Como redefino minha senha?")
+    );
+    expect(normalizeQuestion("Onde encontro os meus pedidos?")).toBe(
+      normalizeQuestion("Onde encontro meus pedidos?")
+    );
+  });
+
   it("creates a non-reversible, versioned cache key", () => {
     const key = createAnswerCacheKey({
       normalizedQuestion: "como redefino minha senha",

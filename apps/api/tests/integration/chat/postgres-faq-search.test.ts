@@ -5,6 +5,7 @@ import {
 } from "../../../src/infrastructure/database/client.js";
 import { runMigrations } from "../../../src/infrastructure/database/migrate.js";
 import { PostgresFaqSearch } from "../../../src/modules/chat/adapters/outbound/postgres-faq-search.js";
+import { normalizeQuestion } from "../../../src/modules/chat/domain/normalize-question.js";
 import { startTestEnvironment, type TestEnvironment } from "../../helpers/test-environment.js";
 
 const integration = process.env.RUN_INTEGRATION === "true" ? describe : describe.skip;
@@ -43,6 +44,11 @@ integration("PostgresFaqSearch", () => {
     );
 
     await expect(search.findExact("como redefino minha senha", null)).resolves.toMatchObject({
+      answer: "Use a recuperação de acesso enviada por e-mail."
+    });
+    await expect(
+      search.findExact(normalizeQuestion("Como redefino a minha senha?"), null)
+    ).resolves.toMatchObject({
       answer: "Use a recuperação de acesso enviada por e-mail."
     });
     await expect(search.findExact("outra pergunta", null)).resolves.toBeNull();
