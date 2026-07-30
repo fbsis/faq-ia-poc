@@ -263,7 +263,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Faq"
         "409":
-          description: FAQ cannot be activated until its embedding is ready.
+          description: FAQ is already active or cannot enter the requested lifecycle transition.
           content:
             application/json:
               schema:
@@ -699,6 +699,7 @@ components:
     FaqStatus:
       type: string
       enum: [draft, embedding_pending, active, embedding_failed, inactive]
+      description: Restoring an inactive FAQ schedules a fresh embedding before it becomes searchable.
     FaqInput:
       type: object
       additionalProperties: false

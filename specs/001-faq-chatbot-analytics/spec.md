@@ -8,6 +8,12 @@
 
 **Input**: Plataforma web para automatizar respostas a dúvidas recorrentes e oferecer indicadores administrativos sobre as interações.
 
+## Clarifications
+
+### Session 2026-07-30
+
+- Q: Quando um administrador apagar uma pergunta e resposta, o que deve acontecer com esse conteúdo? → A: Desativar e permitir restauração, sem excluir os dados.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Consultar uma dúvida frequente (Priority: P1)
@@ -88,6 +94,10 @@ Como administrador, quero cadastrar, editar, categorizar, ativar e desativar per
 2. **Given** que uma entrada é editada, **When** a alteração é publicada, **Then** novas consultas usam o conteúdo atualizado sem alterar o histórico anterior.
 3. **Given** que uma entrada é desativada, **When** uma consulta relacionada ocorre, **Then** ela não é usada como resposta.
 4. **Given** que os dados são inválidos ou incompletos, **When** o administrador tenta publicar, **Then** os problemas são indicados e nenhum conteúdo incompleto fica disponível.
+5. **Given** que uma entrada foi desativada, **When** o administrador a restaura, **Then** ela volta
+   ao fluxo de publicação sem perder conteúdo, vínculos ou histórico.
+6. **Given** que o administrador solicita apagar uma entrada, **When** confirma a ação, **Then** o
+   sistema realiza uma desativação reversível e não exclui fisicamente a pergunta ou resposta.
 
 ---
 
@@ -119,6 +129,8 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - Entradas inativas ou incompletas nunca são apresentadas como solução.
 - Consultas sem categoria são agrupadas como “Sem categoria” e permanecem nos totais.
 - Alterações na base não modificam retroativamente o conteúdo registrado em interações anteriores.
+- A ação administrativa de apagar uma entrada é sempre reversível e preserva seus vínculos e
+  referências históricas.
 - Perguntas repetidas equivalentes incrementam uma pendência compartilhada sem apagar as ocorrências individuais.
 - Ações administrativas concorrentes não criam respostas duplicadas para a mesma pendência.
 - Falhas de indicadores ou consultas oferecem nova tentativa e não exibem dados parciais como completos.
@@ -138,7 +150,8 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **FR-008**: O sistema MUST distinguir interações respondidas, não respondidas, ambíguas e interrompidas por erro.
 - **FR-009**: O sistema MUST preservar uma representação imutável do resultado originalmente apresentado.
 - **FR-010**: O sistema MUST restringir dashboard, base de conhecimento, pendências e histórico detalhado a administradores autorizados.
-- **FR-011**: Administradores MUST poder cadastrar, consultar, editar, ativar e desativar entradas da base.
+- **FR-011**: Administradores MUST poder cadastrar, consultar, editar, ativar, desativar e restaurar
+  entradas da base.
 - **FR-012**: Toda entrada publicada MUST conter pergunta, resposta e categoria válidas.
 - **FR-013**: O dashboard MUST exibir o total de consultas para um intervalo selecionado.
 - **FR-014**: O dashboard MUST exibir as perguntas ou intenções mais frequentes e suas quantidades.
@@ -182,6 +195,9 @@ Como administrador, quero organizar as perguntas não respondidas, responder uma
 - **FR-041**: O sistema MUST tratar artigos definidos neutros antes de possessivos como variação
   equivalente na normalização da busca, de modo que perguntas como “como redefino a minha senha”
   encontrem exatamente a FAQ “como redefino minha senha” e retornem sua resposta aprovada.
+- **FR-042**: A ação de apagar uma pergunta e resposta MUST ser implementada como desativação
+  reversível, MUST permitir restauração por administrador e MUST preservar os dados, vínculos e
+  referências históricas da entrada.
 
 ### Key Entities
 

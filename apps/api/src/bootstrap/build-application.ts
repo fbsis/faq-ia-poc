@@ -1,6 +1,7 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import type { FaqListQuery } from "@faq/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Redis } from "ioredis";
 import type { DatabasePool } from "../infrastructure/database/client.js";
@@ -48,6 +49,12 @@ import type { FaqCandidate } from "../modules/chat/domain/faq-candidate.js";
 import type { Interaction } from "../modules/chat/domain/interaction.js";
 import { PostgresUnansweredRecorder } from "../modules/knowledge-gaps/adapters/outbound/postgres-unanswered-recorder.js";
 import type { UnansweredInteractionRecorder } from "../modules/knowledge-gaps/application/ports.js";
+import { registerFaqRoutes } from "../modules/faq/adapters/inbound/http/faq-routes.js";
+import { PostgresFaqRepository } from "../modules/faq/adapters/outbound/postgres-faq-repository.js";
+import { createFaqUseCases } from "../modules/faq/application/faq-use-cases.js";
+import type { CategoryRepository, FaqRepository } from "../modules/faq/application/ports.js";
+import type { Category } from "../modules/faq/domain/category.js";
+import type { FaqEntry } from "../modules/faq/domain/faq-entry.js";
 import { randomIds, systemClock } from "../shared/domain/ports.js";
 
 export interface BuildApplicationOptions {
@@ -113,10 +120,17 @@ export async function buildApplication(
     resources.analytics,
     environment.ORGANIZATION_TIME_ZONE
   );
+  const faqUseCases = createFaqUseCases({
+    categories: resources.faq,
+    faqs: resources.faq,
+    ids: { create: () => randomIds.next() },
+    clock: systemClock
+  });
 
   registerAuthRoutes(app, { environment, login, getSession, logout });
   registerChatRoutes(app, askQuestion);
   registerAnalyticsRoutes(app, { getSession, getAnalyticsSummary });
+  registerFaqRoutes(app, { getSession, useCases: faqUseCases });
   app.get("/api/v1/health", () => ({ status: "ok" }));
 
   app.addHook("onClose", async () => {
@@ -134,6 +148,7 @@ interface Resources {
   auth: AdminRepository & SessionRepository;
   passwords: ScryptPasswordHasher;
   analytics: AnalyticsRepository;
+  faq: CategoryRepository & FaqRepository;
   chat: {
     search: FaqSearch;
     cache: AnswerCache;
@@ -163,6 +178,7 @@ function createRuntimeResources(environment: Environment): Resources {
     auth: new PostgresAuthRepository(pool),
     passwords: new ScryptPasswordHasher(),
     analytics: new PostgresAnalyticsRepository(pool),
+    faq: new PostgresFaqRepository(pool),
     chat: {
       search: new PostgresFaqSearch(pool),
       cache: new RedisAnswerCache(cache),
@@ -194,6 +210,7 @@ async function createTestResources(
     auth: new MemoryAuthRepository(admin),
     passwords,
     analytics: new MemoryAnalyticsRepository(),
+    faq: new MemoryFaqRepository(),
     chat: {
       search: new MemoryFaqSearch(),
       cache: new MemoryAnswerCache(),
@@ -204,6 +221,63 @@ async function createTestResources(
       knowledgeVersion: { current: () => Promise.resolve(1) }
     }
   };
+}
+
+class MemoryFaqRepository implements CategoryRepository, FaqRepository {
+  private readonly categories: Category[] = [];
+  private readonly faqs: FaqEntry[] = [];
+
+  listCategories(): Promise<Category[]> {
+    return Promise.resolve([...this.categories]);
+  }
+
+  createCategory(category: Category): Promise<Category> {
+    this.categories.push(category);
+    return Promise.resolve(category);
+  }
+
+  listFaqs(query: FaqListQuery) {
+    const items = this.faqs
+      .filter((faq) => !query.status || faq.status === query.status)
+      .filter((faq) => !query.categoryId || faq.categoryId === query.categoryId)
+      .map((faq) => {
+        const category = this.categories.find((item) => item.id === faq.categoryId)!;
+        return {
+          id: faq.id,
+          category: { id: category.id, name: category.name },
+          question: faq.question,
+          aliases: faq.aliases,
+          answer: faq.answer,
+          status: faq.status,
+          contentVersion: faq.contentVersion,
+          embeddingError: faq.embeddingError,
+          createdAt: faq.createdAt.toISOString(),
+          updatedAt: faq.updatedAt.toISOString()
+        };
+      });
+    const offset = (query.page - 1) * query.pageSize;
+    return Promise.resolve({
+      items: items.slice(offset, offset + query.pageSize),
+      page: query.page,
+      pageSize: query.pageSize,
+      total: items.length
+    });
+  }
+
+  getFaq(id: string): Promise<FaqEntry | null> {
+    return Promise.resolve(this.faqs.find((faq) => faq.id === id) ?? null);
+  }
+
+  saveFaq(faq: FaqEntry): Promise<FaqEntry> {
+    const index = this.faqs.findIndex((item) => item.id === faq.id);
+    if (index >= 0) this.faqs[index] = faq;
+    else this.faqs.push(faq);
+    return Promise.resolve(faq);
+  }
+
+  incrementKnowledgeVersion(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 class MemoryAnalyticsRepository implements AnalyticsRepository {

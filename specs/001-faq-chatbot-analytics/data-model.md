@@ -53,6 +53,9 @@ Validation:
 - `question`, `answer`, or category changes move the entry to `embedding_pending`.
 - Activation succeeds only after a matching embedding is stored.
 - Deactivation is immediate and increments the knowledge-base version.
+- Deactivation is a reversible soft delete: the FAQ, aliases, and historical interaction
+  references remain stored. Restoration increments `content_version` and schedules a fresh
+  embedding before the FAQ becomes searchable again.
 - Duplicate normalized questions within the same active category are rejected or resolved by the administrator.
 
 Indexes:

@@ -209,33 +209,33 @@ verify new chats use the new answer while old snapshots do not change, then deac
 
 ### Tests for User Story 4
 
-- [ ] T095 [P] [US4] Add category and FAQ input, page, status, and retry contract tests in `packages/contracts/src/faqs.test.ts`
-- [ ] T096 [P] [US4] Add FAQ validation, duplicate, content-version, and lifecycle transition tests in `apps/api/tests/unit/faq/faq.test.ts`
-- [ ] T097 [P] [US4] Add category and FAQ create, edit, activation, deactivation, and retry use-case tests in `apps/api/tests/unit/faq/faq-use-cases.test.ts`
-- [ ] T098 [P] [US4] Add PostgreSQL FAQ CRUD, alias, duplicate, and knowledge-version tests in `apps/api/tests/integration/faq/postgres-faq-repository.test.ts`
-- [ ] T099 [P] [US4] Add FAQ mutation plus outbox atomicity and rollback tests in `apps/api/tests/integration/faq/faq-outbox.test.ts`
-- [ ] T100 [P] [US4] Add outbox recovery, deterministic BullMQ ID, and duplicate-publication tests in `apps/api/tests/integration/queue/outbox-relay.test.ts`
-- [ ] T101 [P] [US4] Add embedding worker success, stale-version, transient retry, permanent failure, and shutdown tests in `apps/api/tests/integration/queue/embedding-worker.test.ts`
-- [ ] T102 [P] [US4] Add category and FAQ HTTP authorization, validation, pagination, and lifecycle contract tests in `apps/api/tests/contract/faq.routes.test.ts`
-- [ ] T103 [P] [US4] Add FAQ list, form, validation, pending, failed, retry, and status UI tests in `apps/web/tests/integration/faq-admin/faq-admin.test.tsx`
+- [X] T095 [P] [US4] Add category and FAQ input, page, status, and retry contract tests in `packages/contracts/src/faqs.test.ts`
+- [X] T096 [P] [US4] Add FAQ validation, duplicate, content-version, and lifecycle transition tests in `apps/api/tests/unit/faq/faq.test.ts`
+- [X] T097 [P] [US4] Add category and FAQ create, edit, activation, deactivation, and retry use-case tests in `apps/api/tests/unit/faq/faq-use-cases.test.ts`
+- [X] T098 [P] [US4] Add PostgreSQL FAQ CRUD, alias, duplicate, and knowledge-version tests in `apps/api/tests/integration/faq/postgres-faq-repository.test.ts`
+- [X] T099 [P] [US4] Add FAQ mutation plus outbox atomicity and rollback tests in `apps/api/tests/integration/faq/faq-outbox.test.ts`
+- [X] T100 [P] [US4] Add outbox recovery, deterministic BullMQ ID, and duplicate-publication tests in `apps/api/tests/integration/queue/outbox-relay.test.ts`
+- [X] T101 [P] [US4] Add embedding worker success, stale-version, transient retry, permanent failure, and shutdown tests in `apps/api/tests/integration/queue/embedding-worker.test.ts`
+- [X] T102 [P] [US4] Add category and FAQ HTTP authorization, validation, pagination, and lifecycle contract tests in `apps/api/tests/contract/faq.routes.test.ts`
+- [X] T103 [P] [US4] Add FAQ list, form, validation, pending, failed, retry, and status UI tests in `apps/web/tests/integration/faq-admin/faq-admin.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T104 [P] [US4] Define category, FAQ, pagination, status, and embedding-retry Zod contracts in `packages/contracts/src/faqs.ts`
-- [ ] T105 [P] [US4] Define Category, FaqEntry, FaqAlias, and lifecycle rules in `apps/api/src/modules/faq/domain/category.ts` and `apps/api/src/modules/faq/domain/faq-entry.ts`
-- [ ] T106 [P] [US4] Declare FAQ repository, knowledge-version, outbox, and queue publisher ports in `apps/api/src/modules/faq/application/ports.ts`
-- [ ] T107 [P] [US4] Define identifier-only outbox and embedding job contracts in `apps/api/src/infrastructure/queue/job-contracts.ts`
-- [ ] T108 [US4] Implement PostgreSQL category, FAQ, alias, knowledge-version, and outbox persistence in `apps/api/src/modules/faq/adapters/outbound/postgres-faq-repository.ts`
-- [ ] T109 [P] [US4] Implement BullMQ publication with deterministic IDs and retention policy in `apps/api/src/modules/faq/adapters/outbound/bullmq-queue-publisher.ts`
-- [ ] T110 [US4] Implement list/create categories and list/get/create/update/status/retry FAQ use cases in `apps/api/src/modules/faq/application/faq-use-cases.ts`
-- [ ] T111 [US4] Implement the locking outbox relay and reconciliation loop in `apps/api/src/infrastructure/queue/outbox-relay.ts`
-- [ ] T112 [US4] Implement content-version-guarded embedding processing and FAQ activation in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
-- [ ] T113 [US4] Wire queue relay and worker lifecycle, limiter, retries, events, and graceful shutdown in `apps/api/src/commands/relay-outbox.ts` and `apps/api/src/commands/start-worker.ts`
-- [ ] T114 [US4] Expose authorized category and FAQ lifecycle routes in `apps/api/src/modules/faq/adapters/inbound/http/faq-routes.ts`
-- [ ] T115 [P] [US4] Implement typed FAQ and category APIs with TanStack Query invalidation in `apps/web/src/features/faq-admin/faq-api.ts` and `apps/web/src/features/faq-admin/use-faqs.ts`
-- [ ] T116 [P] [US4] Build category management and reusable FAQ form validation in `apps/web/src/features/faq-admin/category-manager.tsx` and `apps/web/src/features/faq-admin/faq-form.tsx`
-- [ ] T117 [US4] Build FAQ list, status, embedding progress, failure, and retry UI in `apps/web/src/features/faq-admin/faq-admin-page.tsx`
-- [ ] T118 [US4] Add the full FAQ lifecycle and immutable-history Playwright journey in `tests/e2e/faq-admin.spec.ts`
+- [X] T104 [P] [US4] Define category, FAQ, pagination, status, and embedding-retry Zod contracts in `packages/contracts/src/faqs.ts`
+- [X] T105 [P] [US4] Define Category, FaqEntry, FaqAlias, and lifecycle rules in `apps/api/src/modules/faq/domain/category.ts` and `apps/api/src/modules/faq/domain/faq-entry.ts`
+- [X] T106 [P] [US4] Declare FAQ repository, knowledge-version, outbox, and queue publisher ports in `apps/api/src/modules/faq/application/ports.ts`
+- [X] T107 [P] [US4] Define identifier-only outbox and embedding job contracts in `apps/api/src/infrastructure/queue/job-contracts.ts`
+- [X] T108 [US4] Implement PostgreSQL category, FAQ, alias, knowledge-version, and outbox persistence in `apps/api/src/modules/faq/adapters/outbound/postgres-faq-repository.ts`
+- [X] T109 [P] [US4] Implement BullMQ publication with deterministic IDs and retention policy in `apps/api/src/modules/faq/adapters/outbound/bullmq-queue-publisher.ts`
+- [X] T110 [US4] Implement list/create categories and list/get/create/update/status/retry FAQ use cases in `apps/api/src/modules/faq/application/faq-use-cases.ts`
+- [X] T111 [US4] Implement the locking outbox relay and reconciliation loop in `apps/api/src/infrastructure/queue/outbox-relay.ts`
+- [X] T112 [US4] Implement content-version-guarded embedding processing and FAQ activation in `apps/api/src/infrastructure/queue/process-faq-embedding.ts`
+- [X] T113 [US4] Wire queue relay and worker lifecycle, limiter, retries, events, and graceful shutdown in `apps/api/src/commands/relay-outbox.ts` and `apps/api/src/commands/start-worker.ts`
+- [X] T114 [US4] Expose authorized category and FAQ lifecycle routes in `apps/api/src/modules/faq/adapters/inbound/http/faq-routes.ts`
+- [X] T115 [P] [US4] Implement typed FAQ and category APIs with TanStack Query invalidation in `apps/web/src/features/faq-admin/faq-api.ts` and `apps/web/src/features/faq-admin/use-faqs.ts`
+- [X] T116 [P] [US4] Build category management and reusable FAQ form validation in `apps/web/src/features/faq-admin/category-manager.tsx` and `apps/web/src/features/faq-admin/faq-form.tsx`
+- [X] T117 [US4] Build FAQ list, status, embedding progress, failure, and retry UI in `apps/web/src/features/faq-admin/faq-admin-page.tsx`
+- [X] T118 [US4] Add the full FAQ lifecycle and immutable-history Playwright journey in `tests/e2e/faq-admin.spec.ts`
 
 **Checkpoint**: Administrators can safely evolve searchable knowledge through the durable
 outbox/BullMQ pipeline.

@@ -1,6 +1,7 @@
 import { Button } from "@faq/ui";
 import { AlertCircle, Inbox, Sparkles } from "lucide-react";
 import { AnalyticsCharts } from "./analytics-charts.js";
+import { Link } from "react-router-dom";
 import { AnalyticsFilters } from "./analytics-filters.js";
 import { SummaryCards } from "./summary-cards.js";
 import { useAnalytics } from "./use-analytics.js";
@@ -23,9 +24,12 @@ export function DashboardPage() {
               <p className="text-xs text-slate-400">Painel administrativo</p>
             </div>
           </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-            Dados atualizados
-          </span>
+          <Link
+            className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
+            to="/admin/faqs"
+          >
+            Administrar perguntas
+          </Link>
         </div>
       </header>
 

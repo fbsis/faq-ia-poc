@@ -100,6 +100,8 @@ Expected outcomes:
 5. Disable the conversational provider after retrieval and confirm the user receives the approved
    FAQ text verbatim rather than an invented response.
 8. Deactivate the FAQ and confirm it is no longer returned.
+9. Restore that FAQ and confirm it keeps the same identifier, returns to `embedding_pending`,
+   becomes `active` after worker processing, and leaves old interaction snapshots unchanged.
 
 ## Validate unanswered behavior
 

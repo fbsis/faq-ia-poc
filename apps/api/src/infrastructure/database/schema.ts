@@ -20,7 +20,7 @@ export const faqStatus = pgEnum("faq_status", [
   "embedding_pending",
   "active",
   "inactive",
-  "failed"
+  "embedding_failed"
 ]);
 export const interactionOutcome = pgEnum("interaction_outcome", [
   "answered",
@@ -63,6 +63,7 @@ export const categories = pgTable("categories", {
   id: uuid().primaryKey(),
   name: text().notNull(),
   slug: text().notNull(),
+  isActive: boolean("is_active").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
 });
@@ -78,6 +79,7 @@ export const faqs = pgTable(
     status: faqStatus().notNull(),
     embedding: vector({ dimensions: 1536 }),
     contentVersion: integer("content_version").notNull(),
+    embeddingError: text("embedding_error"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
   },

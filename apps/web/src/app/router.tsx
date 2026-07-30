@@ -15,6 +15,13 @@ export const router = createBrowserRouter([
           const { DashboardPage } = await import("../features/dashboard/dashboard-page.js");
           return { Component: DashboardPage };
         }
+      },
+      {
+        path: "/admin/faqs",
+        lazy: async () => {
+          const { FaqAdminPage } = await import("../features/faq-admin/faq-admin-page.js");
+          return { Component: FaqAdminPage };
+        }
       }
     ]
   }

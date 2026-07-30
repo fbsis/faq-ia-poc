@@ -154,6 +154,10 @@ bootstrap layer.
 | Bull Board | Exposes operational queue visibility | BullMQ queue state | Admin-only and read-only in production; never determines business status |
 | OpenAI adapters | Interpret bounded follow-ups, produce grounded conversational answers, and create 1,536-dimensional embeddings | Responses API with `gpt-5.6-luna`; embeddings with `text-embedding-3-small` | Disable response storage; generation failure returns approved text verbatim; semantic-only questions fall back safely |
 
+FAQ removal is a reversible lifecycle transition. An inactive entry remains available for audit
+and restoration but is excluded from chat retrieval immediately. Restoration increments its
+content version and follows the same outbox/BullMQ embedding path before becoming active again.
+
 ## 5. Request and Job Lifecycles
 
 ### 5.1 Public question
