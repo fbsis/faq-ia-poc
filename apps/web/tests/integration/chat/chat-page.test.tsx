@@ -93,6 +93,52 @@ describe("public FAQ chat", () => {
     expect(screen.getByText("Segunda pergunta", { exact: true })).toBeVisible();
   });
 
+  it("sends completed turns as bounded context for a follow-up question", async () => {
+    const requests: unknown[] = [];
+    server.use(
+      http.post("/api/v1/chat/questions", async ({ request }) => {
+        const body = (await request.json()) as {
+          question: string;
+          history?: Array<{ role: string; content: string }>;
+        };
+        requests.push(body);
+        return HttpResponse.json({
+          interactionId:
+            requests.length === 1
+              ? "00000000-0000-4000-8000-000000000010"
+              : "00000000-0000-4000-8000-000000000011",
+          status: "answered",
+          message: "Resposta fundamentada.",
+          answer:
+            requests.length === 1
+              ? "Você pode redefinir sua senha pela tela de login."
+              : "Sem acesso ao e-mail, procure o suporte cadastral."
+        });
+      })
+    );
+    renderPage();
+    const input = screen.getByLabelText(/digite sua pergunta/i);
+
+    await userEvent.type(input, "Como redefino minha senha?");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+    await screen.findByText(/você pode redefinir/i);
+
+    await userEvent.type(input, "E se eu não tiver acesso ao e-mail?");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+    await screen.findByText(/procure o suporte cadastral/i);
+
+    expect(requests[1]).toEqual({
+      question: "E se eu não tiver acesso ao e-mail?",
+      history: [
+        { role: "user", content: "Como redefino minha senha?" },
+        {
+          role: "assistant",
+          content: "Você pode redefinir sua senha pela tela de login."
+        }
+      ]
+    });
+  });
+
   it("disables duplicate submission while waiting", async () => {
     server.use(
       http.post("/api/v1/chat/questions", async () => {
