@@ -62,10 +62,12 @@ import { DismissKnowledgeGap } from "../modules/knowledge-gaps/application/dismi
 import { ListKnowledgeGaps } from "../modules/knowledge-gaps/application/list-knowledge-gaps.js";
 import { ReopenKnowledgeGap } from "../modules/knowledge-gaps/application/reopen-knowledge-gap.js";
 import { ResolveKnowledgeGap } from "../modules/knowledge-gaps/application/resolve-knowledge-gap.js";
+import { RetryGapResolution } from "../modules/knowledge-gaps/application/retry-gap-resolution.js";
 import type {
   DismissKnowledgeGapCommand,
   KnowledgeGapRepository,
   ReopenKnowledgeGapCommand,
+  RetryGapResolutionCommand,
   ResolveKnowledgeGapCommand,
   UnansweredInteractionRecorder
 } from "../modules/knowledge-gaps/application/ports.js";
@@ -148,6 +150,11 @@ export async function buildApplication(
     randomIds,
     systemClock
   );
+  const retryGapResolution = new RetryGapResolution(
+    resources.knowledgeGaps,
+    randomIds,
+    systemClock
+  );
   const dismissKnowledgeGap = new DismissKnowledgeGap(
     resources.knowledgeGaps,
     randomIds,
@@ -174,6 +181,7 @@ export async function buildApplication(
     listKnowledgeGaps,
     getKnowledgeGap,
     resolveKnowledgeGap,
+    retryGapResolution,
     dismissKnowledgeGap,
     reopenKnowledgeGap
   });
@@ -306,6 +314,34 @@ class MemoryKnowledgeGapRepository implements KnowledgeGapRepository {
       ...this.gap,
       status: "resolving",
       resolvedFaqId: command.faqId,
+      version: this.gap.version + 1,
+      currentResolution: resolution
+    };
+    return Promise.resolve(resolution);
+  }
+
+  retryResolution(command: RetryGapResolutionCommand): Promise<GapResolution> {
+    if (
+      !this.gap ||
+      this.gap.id !== command.knowledgeGapId ||
+      this.gap.version !== command.input.expectedVersion ||
+      this.gap.currentResolution?.status !== "failed"
+    ) {
+      return Promise.reject(new Error("Knowledge gap is not eligible for retry."));
+    }
+    const resolution: GapResolution = {
+      id: command.resolutionId,
+      knowledgeGapId: command.knowledgeGapId,
+      mode: this.gap.currentResolution.mode,
+      faqId: this.gap.currentResolution.faqId,
+      faqStatus: "embedding_pending",
+      status: "pending",
+      createdAt: command.createdAt.toISOString()
+    };
+    this.gap = {
+      ...this.gap,
+      status: "resolving",
+      resolvedFaqId: resolution.faqId,
       version: this.gap.version + 1,
       currentResolution: resolution
     };

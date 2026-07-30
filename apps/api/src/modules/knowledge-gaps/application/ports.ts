@@ -6,6 +6,7 @@ import type {
   KnowledgeGapListQuery,
   KnowledgeGapPage,
   ReopenKnowledgeGapInput,
+  RetryGapResolutionInput,
   ResolveKnowledgeGapInput
 } from "@faq/contracts";
 import type { Interaction } from "../../chat/domain/interaction.js";
@@ -18,6 +19,7 @@ export interface KnowledgeGapRepository {
   list(query: KnowledgeGapListQuery): Promise<KnowledgeGapPage>;
   get(id: string): Promise<KnowledgeGapDetails | null>;
   resolve(command: ResolveKnowledgeGapCommand): Promise<GapResolution>;
+  retryResolution(command: RetryGapResolutionCommand): Promise<GapResolution>;
   dismiss(command: DismissKnowledgeGapCommand): Promise<KnowledgeGap>;
   reopen(command: ReopenKnowledgeGapCommand): Promise<KnowledgeGap>;
 }
@@ -45,3 +47,14 @@ interface KnowledgeGapActionCommand<TInput> {
 
 export type DismissKnowledgeGapCommand = KnowledgeGapActionCommand<DismissKnowledgeGapInput>;
 export type ReopenKnowledgeGapCommand = KnowledgeGapActionCommand<ReopenKnowledgeGapInput>;
+
+export interface RetryGapResolutionCommand {
+  knowledgeGapId: string;
+  adminId: string;
+  resolutionId: string;
+  eventId: string;
+  outboxId: string;
+  idempotencyKey: string;
+  input: RetryGapResolutionInput;
+  createdAt: Date;
+}

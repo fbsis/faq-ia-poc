@@ -113,6 +113,12 @@ export const reopenKnowledgeGapInputSchema = z
   })
   .strict();
 
+export const retryGapResolutionInputSchema = z
+  .object({
+    expectedVersion: z.number().int().positive()
+  })
+  .strict();
+
 export const knowledgeGapIdParamsSchema = z.object({
   knowledgeGapId: identifierSchema
 });
@@ -130,3 +136,4 @@ export type KnowledgeGapEvent = z.infer<typeof knowledgeGapEventSchema>;
 export type ResolveKnowledgeGapInput = z.infer<typeof resolveKnowledgeGapInputSchema>;
 export type DismissKnowledgeGapInput = z.infer<typeof dismissKnowledgeGapInputSchema>;
 export type ReopenKnowledgeGapInput = z.infer<typeof reopenKnowledgeGapInputSchema>;
+export type RetryGapResolutionInput = z.infer<typeof retryGapResolutionInputSchema>;

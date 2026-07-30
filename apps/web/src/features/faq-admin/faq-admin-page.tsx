@@ -19,6 +19,8 @@ export function FaqAdminPage() {
   const knowledgeGap = useKnowledgeGap(knowledgeGapId);
   const resolveKnowledgeGap = useResolveKnowledgeGap();
   const [editing, setEditing] = useState<Faq | "new" | null>(null);
+  const [resolutionMode, setResolutionMode] = useState<"create" | "update">("create");
+  const [targetFaqId, setTargetFaqId] = useState("");
   const categories = administration.categories.data ?? [];
   const gapInitialValues = useMemo(() => {
     if (!knowledgeGap.data) return undefined;
@@ -36,6 +38,12 @@ export function FaqAdminPage() {
     };
   }, [knowledgeGap.data]);
   const resolvingFromGap = Boolean(knowledgeGapId && knowledgeGap.data);
+  const targetFaq =
+    resolutionMode === "update"
+      ? administration.faqs.data?.items.find(
+          (faq) => faq.id === (targetFaqId || administration.faqs.data?.items[0]?.id)
+        )
+      : undefined;
   const showForm = Boolean(editing || knowledgeGapId);
 
   return (
@@ -90,37 +98,75 @@ export function FaqAdminPage() {
           </StatusPanel>
         )}
         {showForm && (!knowledgeGapId || knowledgeGap.data) && (
-          <FaqForm
-            categories={categories}
-            faq={!editing || editing === "new" ? undefined : editing}
-            initialValues={gapInitialValues}
-            pending={administration.saveFaq.isPending || resolveKnowledgeGap.isPending}
-            submitLabel={resolvingFromGap ? "Salvar e resolver pergunta" : undefined}
-            onCancel={() => {
-              if (knowledgeGapId) void navigate("/admin/knowledge-gaps");
-              else setEditing(null);
-            }}
-            onSubmit={async (input) => {
-              if (knowledgeGapId && knowledgeGap.data) {
-                await resolveKnowledgeGap.mutateAsync({
-                  id: knowledgeGapId,
-                  idempotencyKey: crypto.randomUUID(),
-                  input: {
-                    ...input,
-                    mode: "create",
-                    expectedVersion: knowledgeGap.data.version
-                  }
+          <>
+            {resolvingFromGap && (
+              <section className="grid gap-4 rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm sm:grid-cols-2">
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Modo da resolução
+                  <select
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+                    value={resolutionMode}
+                    onChange={(event) =>
+                      setResolutionMode(event.target.value as "create" | "update")
+                    }
+                  >
+                    <option value="create">Criar nova resposta</option>
+                    <option value="update">Atualizar resposta existente</option>
+                  </select>
+                </label>
+                {resolutionMode === "update" && (
+                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                    Resposta existente
+                    <select
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-normal"
+                      value={targetFaq?.id ?? ""}
+                      onChange={(event) => setTargetFaqId(event.target.value)}
+                    >
+                      {administration.faqs.data?.items.map((faq) => (
+                        <option key={faq.id} value={faq.id}>
+                          {faq.question}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </section>
+            )}
+            <FaqForm
+              categories={categories}
+              faq={targetFaq ?? (!editing || editing === "new" ? undefined : editing)}
+              initialValues={targetFaq ? undefined : gapInitialValues}
+              pending={administration.saveFaq.isPending || resolveKnowledgeGap.isPending}
+              submitLabel={resolvingFromGap ? "Salvar e resolver pergunta" : undefined}
+              onCancel={() => {
+                if (knowledgeGapId) void navigate("/admin/knowledge-gaps");
+                else setEditing(null);
+              }}
+              onSubmit={async (input) => {
+                if (knowledgeGapId && knowledgeGap.data) {
+                  await resolveKnowledgeGap.mutateAsync({
+                    id: knowledgeGapId,
+                    idempotencyKey: crypto.randomUUID(),
+                    input: {
+                      ...input,
+                      mode: resolutionMode,
+                      ...(resolutionMode === "update" && targetFaq
+                        ? { faqId: targetFaq.id }
+                        : {}),
+                      expectedVersion: knowledgeGap.data.version
+                    }
+                  });
+                  await navigate("/admin/knowledge-gaps");
+                  return;
+                }
+                await administration.saveFaq.mutateAsync({
+                  id: editing === "new" ? undefined : editing?.id,
+                  input
                 });
-                await navigate("/admin/knowledge-gaps");
-                return;
-              }
-              await administration.saveFaq.mutateAsync({
-                id: editing === "new" ? undefined : editing?.id,
-                input
-              });
-              setEditing(null);
-            }}
-          />
+                setEditing(null);
+              }}
+            />
+          </>
         )}
 
         {administration.faqs.isPending || administration.categories.isPending ? (

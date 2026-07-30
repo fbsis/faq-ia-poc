@@ -8,6 +8,7 @@ import {
   knowledgeGapPageSchema,
   knowledgeGapSchema,
   reopenKnowledgeGapInputSchema,
+  retryGapResolutionInputSchema,
   resolveKnowledgeGapInputSchema
 } from "@faq/contracts";
 import type { FastifyInstance } from "fastify";
@@ -21,6 +22,7 @@ import type { DismissKnowledgeGap } from "../../../application/dismiss-knowledge
 import type { ListKnowledgeGaps } from "../../../application/list-knowledge-gaps.js";
 import type { ReopenKnowledgeGap } from "../../../application/reopen-knowledge-gap.js";
 import type { ResolveKnowledgeGap } from "../../../application/resolve-knowledge-gap.js";
+import type { RetryGapResolution } from "../../../application/retry-gap-resolution.js";
 
 export function registerKnowledgeGapRoutes(
   app: FastifyInstance,
@@ -29,6 +31,7 @@ export function registerKnowledgeGapRoutes(
     listKnowledgeGaps: ListKnowledgeGaps;
     getKnowledgeGap: GetKnowledgeGap;
     resolveKnowledgeGap: ResolveKnowledgeGap;
+    retryGapResolution: RetryGapResolution;
     dismissKnowledgeGap: DismissKnowledgeGap;
     reopenKnowledgeGap: ReopenKnowledgeGap;
   }
@@ -53,6 +56,22 @@ export function registerKnowledgeGapRoutes(
       return knowledgeGapDetailsSchema.parse(
         await dependencies.getKnowledgeGap.execute(knowledgeGapId)
       );
+    }
+  );
+
+  app.post(
+    "/api/v1/knowledge-gaps/:knowledgeGapId/resolution-retries",
+    { preHandler: requireMutation },
+    async (request, reply) => {
+      const { knowledgeGapId } = knowledgeGapIdParamsSchema.parse(request.params);
+      const session = await dependencies.getSession.execute(request.cookies[SESSION_COOKIE]);
+      const resolution = await dependencies.retryGapResolution.execute({
+        knowledgeGapId,
+        adminId: session.admin.id,
+        idempotencyKey: idempotencyKeySchema.parse(request.headers["idempotency-key"]),
+        input: retryGapResolutionInputSchema.parse(request.body)
+      });
+      return reply.status(202).send(gapResolutionSchema.parse(resolution));
     }
   );
 

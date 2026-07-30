@@ -10,6 +10,7 @@ import {
   type KnowledgeGapListQuery,
   type KnowledgeGapPage,
   type ReopenKnowledgeGapInput,
+  type RetryGapResolutionInput,
   type ResolveKnowledgeGapInput
 } from "@faq/contracts";
 import { requestJson } from "../../shared/api/http-client.js";
@@ -45,6 +46,19 @@ export function resolveKnowledgeGap(
   idempotencyKey: string
 ): Promise<GapResolution> {
   return requestJson(`/api/v1/knowledge-gaps/${id}/resolutions`, {
+    method: "POST",
+    headers: { "idempotency-key": idempotencyKey },
+    body: JSON.stringify(input),
+    schema: gapResolutionSchema
+  });
+}
+
+export function retryGapResolution(
+  id: string,
+  input: RetryGapResolutionInput,
+  idempotencyKey: string
+): Promise<GapResolution> {
+  return requestJson(`/api/v1/knowledge-gaps/${id}/resolution-retries`, {
     method: "POST",
     headers: { "idempotency-key": idempotencyKey },
     body: JSON.stringify(input),

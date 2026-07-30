@@ -15,6 +15,7 @@ import type {
   DismissKnowledgeGapCommand,
   KnowledgeGapRepository,
   ReopenKnowledgeGapCommand,
+  RetryGapResolutionCommand,
   ResolveKnowledgeGapCommand
 } from "../../application/ports.js";
 import {
@@ -58,6 +59,15 @@ interface ResolutionRow {
   request_hash: string | null;
   created_at: Date;
   completed_at: Date | null;
+}
+
+interface RetrySourceRow {
+  mode: GapResolution["mode"];
+  faq_id: string;
+  question_snapshot: string;
+  answer_snapshot: string;
+  category_id: string;
+  aliases_snapshot: string[];
 }
 
 const supportedEvents = [
@@ -265,6 +275,153 @@ export class PostgresKnowledgeGapRepository implements KnowledgeGapRepository {
         knowledgeGapId: command.knowledgeGapId,
         mode: command.input.mode,
         faqId: command.faqId,
+        faqStatus: "embedding_pending",
+        status: "pending",
+        createdAt: command.createdAt.toISOString()
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async retryResolution(command: RetryGapResolutionCommand): Promise<GapResolution> {
+    const requestHash = hashRetryRequest(command);
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await lockIdempotencyKey(client, command.adminId, command.idempotencyKey);
+      const existing = await client.query<ResolutionRow>(
+        `${resolutionProjection}
+         WHERE r.admin_id = $1 AND r.idempotency_key = $2
+         FOR UPDATE OF r`,
+        [command.adminId, command.idempotencyKey]
+      );
+      if (existing.rows[0]) {
+        if (existing.rows[0].request_hash !== requestHash) {
+          throw conflict(
+            "KNOWLEDGE_GAP_IDEMPOTENCY_CONFLICT",
+            "The idempotency key was already used with different retry data."
+          );
+        }
+        await client.query("COMMIT");
+        return toResolution(existing.rows[0]);
+      }
+
+      const gap = await client.query<{ status: KnowledgeGap["status"]; version: number }>(
+        "SELECT status, version FROM knowledge_gaps WHERE id = $1 FOR UPDATE",
+        [command.knowledgeGapId]
+      );
+      if (!gap.rows[0]) {
+        throw new AppError("KNOWLEDGE_GAP_NOT_FOUND", "Knowledge gap not found.", 404);
+      }
+      if (gap.rows[0].status !== "open" || gap.rows[0].version !== command.input.expectedVersion) {
+        throw conflict(
+          "KNOWLEDGE_GAP_VERSION_CONFLICT",
+          "The knowledge gap changed before this retry was submitted."
+        );
+      }
+      const source = await client.query<RetrySourceRow>(
+        `SELECT mode, faq_id, question_snapshot, answer_snapshot, category_id,
+                aliases_snapshot
+         FROM knowledge_gap_resolutions
+         WHERE gap_id = $1 AND status = 'failed' AND faq_id IS NOT NULL
+         ORDER BY created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [command.knowledgeGapId]
+      );
+      if (!source.rows[0]) {
+        throw conflict(
+          "KNOWLEDGE_GAP_RETRY_UNAVAILABLE",
+          "The knowledge gap has no failed resolution available for retry."
+        );
+      }
+      const faq = await client.query<{ content_version: number }>(
+        `UPDATE faqs
+         SET status = 'embedding_pending',
+             embedding = NULL,
+             embedding_error = NULL,
+             content_version = content_version + 1,
+             updated_at = $2
+         WHERE id = $1 AND status = 'embedding_failed'
+         RETURNING content_version`,
+        [source.rows[0].faq_id, command.createdAt]
+      );
+      if (!faq.rows[0]) {
+        throw conflict(
+          "KNOWLEDGE_GAP_RETRY_UNAVAILABLE",
+          "The failed FAQ is no longer eligible for resolution retry."
+        );
+      }
+      await client.query(
+        `INSERT INTO knowledge_gap_resolutions
+          (id, gap_id, admin_id, mode, faq_id, faq_content_version,
+           question_snapshot, answer_snapshot, category_id, aliases_snapshot,
+           expected_gap_version, idempotency_key, request_hash, status, created_at)
+         VALUES
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, 'pending', $14)`,
+        [
+          command.resolutionId,
+          command.knowledgeGapId,
+          command.adminId,
+          source.rows[0].mode,
+          source.rows[0].faq_id,
+          faq.rows[0].content_version,
+          source.rows[0].question_snapshot,
+          source.rows[0].answer_snapshot,
+          source.rows[0].category_id,
+          JSON.stringify(source.rows[0].aliases_snapshot),
+          command.input.expectedVersion,
+          command.idempotencyKey,
+          requestHash,
+          command.createdAt
+        ]
+      );
+      await client.query(
+        `UPDATE knowledge_gaps
+         SET status = 'resolving', resolved_faq_id = $2, version = version + 1
+         WHERE id = $1`,
+        [command.knowledgeGapId, source.rows[0].faq_id]
+      );
+      await client.query(
+        `INSERT INTO knowledge_gap_events
+          (id, gap_id, admin_id, event_type, from_status, to_status,
+           faq_id, resolution_id, reason, created_at)
+         VALUES
+          ($1, $2, $3, 'resolution_started', 'open', 'resolving', $4, $5,
+           'RETRY_AFTER_EMBEDDING_FAILURE', $6)`,
+        [
+          command.eventId,
+          command.knowledgeGapId,
+          command.adminId,
+          source.rows[0].faq_id,
+          command.resolutionId,
+          command.createdAt
+        ]
+      );
+      await client.query(
+        `INSERT INTO outbox_messages (id, topic, aggregate_id, payload, created_at)
+         VALUES ($1, 'faq.embedding.prepare', $2, $3::jsonb, $4)`,
+        [
+          command.outboxId,
+          source.rows[0].faq_id,
+          JSON.stringify({
+            faqId: source.rows[0].faq_id,
+            contentVersion: faq.rows[0].content_version,
+            resolutionId: command.resolutionId
+          }),
+          command.createdAt
+        ]
+      );
+      await client.query("COMMIT");
+      return {
+        id: command.resolutionId,
+        knowledgeGapId: command.knowledgeGapId,
+        mode: source.rows[0].mode,
+        faqId: source.rows[0].faq_id,
         faqStatus: "embedding_pending",
         status: "pending",
         createdAt: command.createdAt.toISOString()
@@ -554,6 +711,18 @@ function hashActionRequest(
         action,
         knowledgeGapId: command.knowledgeGapId,
         reason: command.input.reason ?? null,
+        expectedVersion: command.input.expectedVersion
+      })
+    )
+    .digest("hex");
+}
+
+function hashRetryRequest(command: RetryGapResolutionCommand): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        action: "retry_resolution",
+        knowledgeGapId: command.knowledgeGapId,
         expectedVersion: command.input.expectedVersion
       })
     )

@@ -2,13 +2,50 @@ import type { KnowledgeGapDetails } from "@faq/contracts";
 import { Button } from "@faq/ui";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useDismissKnowledgeGap, useReopenKnowledgeGap } from "./use-knowledge-gaps.js";
+import { HttpError } from "../../shared/api/http-client.js";
+import {
+  useDismissKnowledgeGap,
+  useReopenKnowledgeGap,
+  useRetryGapResolution
+} from "./use-knowledge-gaps.js";
 
 export function KnowledgeGapActions({ details }: { details: KnowledgeGapDetails }) {
   const [showDismiss, setShowDismiss] = useState(false);
   const [reason, setReason] = useState("");
   const dismiss = useDismissKnowledgeGap();
   const reopen = useReopenKnowledgeGap();
+  const retryResolution = useRetryGapResolution();
+
+  if (details.status === "open" && details.currentResolution?.status === "failed") {
+    const conflict =
+      retryResolution.error instanceof HttpError &&
+      retryResolution.error.envelope.code === "KNOWLEDGE_GAP_VERSION_CONFLICT";
+    return (
+      <div className="mt-5">
+        <Button
+          className="w-full"
+          disabled={retryResolution.isPending}
+          onClick={() =>
+            retryResolution.mutate({
+              id: details.id,
+              input: { expectedVersion: details.version },
+              idempotencyKey: crypto.randomUUID()
+            })
+          }
+        >
+          <RotateCcw className="mr-2 size-4" aria-hidden="true" />
+          {retryResolution.isPending ? "Reiniciando resolução…" : "Tentar resolução novamente"}
+        </Button>
+        {retryResolution.isError && (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {conflict
+              ? "A pendência mudou. Recarregue os dados antes de tentar novamente."
+              : "Não foi possível reiniciar a resolução. Revise os dados ou tente novamente."}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (details.status === "dismissed") {
     return (
