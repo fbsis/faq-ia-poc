@@ -1,7 +1,6 @@
 import { Button } from "@faq/ui";
-import { AlertCircle, Inbox, Sparkles } from "lucide-react";
+import { AlertCircle, Inbox } from "lucide-react";
 import { AnalyticsCharts } from "./analytics-charts.js";
-import { Link } from "react-router-dom";
 import { AnalyticsFilters } from "./analytics-filters.js";
 import { SummaryCards } from "./summary-cards.js";
 import { useAnalytics } from "./use-analytics.js";
@@ -13,34 +12,6 @@ export function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-indigo-500">
-              <Sparkles className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="font-semibold">FAQ Intelligence</p>
-              <p className="text-xs text-slate-400">Painel administrativo</p>
-            </div>
-          </div>
-          <nav className="flex gap-2">
-            <Link
-              className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
-              to="/admin/knowledge-gaps"
-            >
-              Perguntas sem resposta
-            </Link>
-            <Link
-              className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
-              to="/admin/faqs"
-            >
-              Administrar perguntas
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-8">
         <div>
           <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-indigo-600">

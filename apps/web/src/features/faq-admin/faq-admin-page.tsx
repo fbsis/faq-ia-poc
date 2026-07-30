@@ -1,8 +1,8 @@
 import type { Faq, FaqStatus } from "@faq/contracts";
 import { Button } from "@faq/ui";
-import { AlertCircle, BookOpen, LoaderCircle, Plus, RotateCcw } from "lucide-react";
+import { AlertCircle, LoaderCircle, Plus, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   useKnowledgeGap,
   useResolveKnowledgeGap
@@ -48,23 +48,6 @@ export function FaqAdminPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-indigo-500">
-              <BookOpen className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="font-semibold">FAQ Intelligence</p>
-              <p className="text-xs text-slate-400">Administração da base</p>
-            </div>
-          </div>
-          <Link className="text-sm font-semibold text-indigo-200 hover:text-white" to="/admin">
-            Ver dashboard
-          </Link>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-8">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>

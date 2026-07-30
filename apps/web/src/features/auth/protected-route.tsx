@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { AdminHeader } from "../admin/admin-header.js";
 import { useSession } from "./use-session.js";
 
 export function ProtectedRoute() {
@@ -15,5 +16,10 @@ export function ProtectedRoute() {
   if (session.isError) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
-  return <Outlet />;
+  return (
+    <>
+      <AdminHeader />
+      <Outlet />
+    </>
+  );
 }

@@ -30,6 +30,14 @@ export const router = createBrowserRouter([
             await import("../features/knowledge-gap-admin/knowledge-gap-admin-page.js");
           return { Component: KnowledgeGapAdminPage };
         }
+      },
+      {
+        path: "/admin/walkthrough",
+        lazy: async () => {
+          const { ArchitectureWalkthroughPage } =
+            await import("../features/admin/architecture-walkthrough-page.js");
+          return { Component: ArchitectureWalkthroughPage };
+        }
       }
     ]
   }

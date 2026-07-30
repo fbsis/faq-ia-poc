@@ -1,7 +1,6 @@
 import { Button } from "@faq/ui";
-import { AlertCircle, Inbox, MessageCircleQuestion } from "lucide-react";
+import { AlertCircle, Inbox } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../faq-admin/faq-api.js";
 import { KnowledgeGapDetails } from "./knowledge-gap-details.js";
@@ -36,28 +35,6 @@ export function KnowledgeGapAdminPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-amber-500">
-              <MessageCircleQuestion className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="font-semibold">FAQ Intelligence</p>
-              <p className="text-xs text-slate-400">Melhoria da base de conhecimento</p>
-            </div>
-          </div>
-          <nav className="flex gap-4 text-sm font-semibold text-indigo-200">
-            <Link className="hover:text-white" to="/admin">
-              Dashboard
-            </Link>
-            <Link className="hover:text-white" to="/admin/faqs">
-              Perguntas
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-8">
         <div>
           <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-amber-700">
