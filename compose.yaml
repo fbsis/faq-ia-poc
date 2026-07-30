@@ -37,6 +37,22 @@ services:
       timeout: 3s
       retries: 20
 
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: development
+    entrypoint: ["sh", "/workspace/docker/development-entrypoint.sh"]
+    command: ["pnpm", "--filter", "@faq/api", "db:migrate"]
+    env_file: [.env]
+    volumes:
+      - .:/workspace
+      - api-node-modules:/workspace/node_modules
+      - pnpm-store:/pnpm/store
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
   api:
     build:
       context: .
@@ -54,6 +70,7 @@ services:
       postgres: { condition: service_healthy }
       redis-cache: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
 
   web:
     build:
@@ -86,6 +103,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
 
   worker:
     build:
@@ -102,6 +120,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
 
 volumes:
   postgres-data:

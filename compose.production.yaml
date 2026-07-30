@@ -8,10 +8,6 @@ x-api: &api
     target: production
   env_file: [.env.production]
   restart: unless-stopped
-  depends_on:
-    postgres: { condition: service_healthy }
-    redis-cache: { condition: service_healthy }
-    redis-queue: { condition: service_healthy }
 
 services:
   postgres:
@@ -50,9 +46,26 @@ services:
       retries: 10
     restart: unless-stopped
 
+  migrate:
+    image: faq-intelligence-api:latest
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: production
+    env_file: [.env.production]
+    command: ["node", "dist/infrastructure/database/migrate.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
   api:
     <<: *api
     ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-cache: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
       interval: 15s
@@ -62,10 +75,20 @@ services:
   relay:
     <<: *api
     command: ["node", "dist/commands/relay-outbox.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-cache: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
 
   worker:
     <<: *api
     command: ["node", "dist/commands/start-worker.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis-cache: { condition: service_healthy }
+      redis-queue: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
 
   web:
     image: faq-intelligence-web:latest

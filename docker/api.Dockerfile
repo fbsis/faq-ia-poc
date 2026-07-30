@@ -16,8 +16,8 @@ RUN pnpm install --no-frozen-lockfile
 COPY . .
 
 FROM development AS build
-RUN pnpm --filter @faq/api... build
-RUN pnpm deploy --filter @faq/api --prod /runtime
+RUN pnpm --filter @faq/contracts build && pnpm --filter @faq/api build
+RUN pnpm deploy --legacy --filter @faq/api --prod /runtime
 
 FROM node:24-alpine AS production
 ENV NODE_ENV=production
@@ -25,4 +25,5 @@ USER node
 WORKDIR /app
 COPY --from=build --chown=node:node /runtime ./
 COPY --from=build --chown=node:node /workspace/apps/api/dist ./dist
+COPY --from=build --chown=node:node /workspace/apps/api/src/infrastructure/database/migrations ./dist/infrastructure/database/migrations
 CMD ["node", "dist/commands/start-api.js"]
