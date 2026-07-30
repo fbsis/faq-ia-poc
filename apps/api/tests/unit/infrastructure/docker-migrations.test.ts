@@ -31,5 +31,8 @@ describe("Docker database migrations", () => {
     expect(dockerfile).toContain(
       "apps/api/src/infrastructure/database/migrations ./dist/infrastructure/database/migrations"
     );
+    expect(dockerfile).toContain(
+      "RUN pnpm --filter @faq/contracts build && pnpm --filter @faq/api build"
+    );
   });
 });
