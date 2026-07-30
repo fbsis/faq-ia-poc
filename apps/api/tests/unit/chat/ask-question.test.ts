@@ -24,17 +24,22 @@ const answer: FaqCandidate = {
 class SearchFake implements FaqSearch {
   exact: FaqCandidate | null = answer;
   semantic: FaqCandidate[] = [];
+  fullText: FaqCandidate[] = [];
   exactQuery: string | null = null;
+  semanticCalls = 0;
+  fullTextCalls = 0;
 
   findExact(normalizedQuestion: string): Promise<FaqCandidate | null> {
     this.exactQuery = normalizedQuestion;
     return Promise.resolve(this.exact);
   }
   findSemantic(): Promise<FaqCandidate[]> {
+    this.semanticCalls += 1;
     return Promise.resolve(this.semantic);
   }
   findFullText(): Promise<FaqCandidate[]> {
-    return Promise.resolve([]);
+    this.fullTextCalls += 1;
+    return Promise.resolve(this.fullText);
   }
 }
 
@@ -42,6 +47,9 @@ class ConversationAgentFake implements ConversationAgent {
   rewrittenQuestion = "Como redefino minha senha?";
   response = "Claro! Na tela de login, clique em “Esqueci minha senha”.";
   failResponse = false;
+  unansweredResponse =
+    "Para eu procurar melhor, você pode explicar qual etapa está tentando concluir?";
+  failUnansweredResponse = false;
 
   rewriteQuestion(): Promise<string> {
     return Promise.resolve(this.rewrittenQuestion);
@@ -51,6 +59,12 @@ class ConversationAgentFake implements ConversationAgent {
     return this.failResponse
       ? Promise.reject(new Error("provider unavailable"))
       : Promise.resolve(this.response);
+  }
+
+  createUnansweredResponse(): Promise<string> {
+    return this.failUnansweredResponse
+      ? Promise.reject(new Error("provider unavailable"))
+      : Promise.resolve(this.unansweredResponse);
   }
 }
 
@@ -193,6 +207,52 @@ describe("AskQuestion", () => {
     expect(interactions.records[0]).toMatchObject({
       answerSnapshot: answer.answer,
       sourceAnswerSnapshot: answer.answer
+    });
+  });
+
+  it("uses semantic and lexical retrieval together and keeps the strongest candidate", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    search.semantic = [{ ...answer, id: "semantic-faq", confidence: 0.72 }];
+    search.fullText = [{ ...answer, id: "lexical-faq", confidence: 0.81 }];
+    const { useCase } = createUseCase({ search });
+
+    const response = await useCase.execute({ question: "recuperar acesso com senha parecida" });
+
+    expect(search.semanticCalls).toBe(1);
+    expect(search.fullTextCalls).toBe(1);
+    expect(response).toMatchObject({
+      status: "answered",
+      matchedQuestion: answer.canonicalQuestion
+    });
+  });
+
+  it("asks a contextual clarification when no approved answer is reliable", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    const { useCase, conversation } = createUseCase({ search });
+
+    const response = await useCase.execute({ question: "Não está funcionando" });
+
+    expect(response).toMatchObject({
+      status: "unanswered",
+      message: conversation.unansweredResponse
+    });
+  });
+
+  it("uses actionable deterministic guidance when unanswered generation fails", async () => {
+    const search = new SearchFake();
+    search.exact = null;
+    const conversation = new ConversationAgentFake();
+    conversation.failUnansweredResponse = true;
+    const { useCase } = createUseCase({ search, conversation });
+
+    const response = await useCase.execute({ question: "Não está funcionando" });
+
+    expect(response).toMatchObject({
+      status: "unanswered",
+      message:
+        "Não encontrei uma resposta confiável ainda. Conte qual resultado você esperava e em qual etapa surgiu a dúvida para eu tentar uma busca mais precisa."
     });
   });
 });

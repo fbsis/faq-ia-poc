@@ -35,11 +35,15 @@ integration("PostgresFaqSearch", () => {
        VALUES
        ('00000000-0000-4000-8000-000000000002',
         '00000000-0000-4000-8000-000000000001',
-        'Como redefino minha senha?', 'como redefino minha senha', 'Resposta aprovada', 'active')`
+        'Como redefino minha senha?', 'como redefino minha senha',
+        'Use a recuperação de acesso enviada por e-mail.', 'active');
+       INSERT INTO faq_aliases (faq_id, phrase, normalized_phrase)
+       VALUES ('00000000-0000-4000-8000-000000000002',
+               'Esqueci minha credencial', 'esqueci minha credencial')`
     );
 
     await expect(search.findExact("como redefino minha senha", null)).resolves.toMatchObject({
-      answer: "Resposta aprovada"
+      answer: "Use a recuperação de acesso enviada por e-mail."
     });
     await expect(search.findExact("outra pergunta", null)).resolves.toBeNull();
   });
@@ -53,5 +57,11 @@ integration("PostgresFaqSearch", () => {
 
     await expect(search.findSemantic(vector, null, 5)).resolves.toMatchObject([{ confidence: 1 }]);
     await expect(search.findFullText("redefino senha", null, 5)).resolves.toHaveLength(1);
+  });
+
+  it("searches Portuguese word forms, aliases, answer text, and small typing errors", async () => {
+    await expect(search.findFullText("esquecer credenciais", null, 5)).resolves.toHaveLength(1);
+    await expect(search.findFullText("recuperar acesso email", null, 5)).resolves.toHaveLength(1);
+    await expect(search.findFullText("redefnir senh", null, 5)).resolves.toHaveLength(1);
   });
 });

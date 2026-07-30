@@ -59,6 +59,31 @@ describe("public FAQ chat", () => {
     expect(screen.getByLabelText(/digite sua pergunta/i)).toHaveValue("");
   });
 
+  it("renders GitHub-flavored Markdown in assistant messages", async () => {
+    server.use(
+      http.post("/api/v1/chat/questions", () =>
+        HttpResponse.json({
+          interactionId: "00000000-0000-4000-8000-000000000010",
+          status: "answered",
+          message: "Resposta fundamentada.",
+          answer:
+            "**Para redefinir:**\n\n1. Abra a tela de login.\n2. Clique em [Esqueci minha senha](https://example.com/reset)."
+        })
+      )
+    );
+    renderPage();
+
+    await userEvent.type(screen.getByLabelText(/digite sua pergunta/i), "Como redefino?");
+    await userEvent.click(screen.getByRole("button", { name: /enviar pergunta/i }));
+
+    expect(await screen.findByText("Para redefinir:")).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByRole("link", { name: /esqueci minha senha/i })).toHaveAttribute(
+      "href",
+      "https://example.com/reset"
+    );
+  });
+
   it("keeps previous user and assistant messages in the visible conversation", async () => {
     server.use(
       http.post("/api/v1/chat/questions", async ({ request }) => {
