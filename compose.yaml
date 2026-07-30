@@ -42,12 +42,14 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: development
+    entrypoint: ["sh", "/workspace/docker/development-entrypoint.sh"]
     command: ["pnpm", "--filter", "@faq/api", "dev"]
     env_file: [.env]
     ports: ["3000:3000"]
     volumes:
       - .:/workspace
       - api-node-modules:/workspace/node_modules
+      - pnpm-store:/pnpm/store
     depends_on:
       postgres: { condition: service_healthy }
       redis-cache: { condition: service_healthy }
@@ -58,6 +60,7 @@ services:
       context: .
       dockerfile: docker/web.Dockerfile
       target: development
+    entrypoint: ["sh", "/workspace/docker/development-entrypoint.sh"]
     command: ["pnpm", "--filter", "@faq/web", "dev"]
     environment:
       VITE_API_PROXY_TARGET: http://api:3000
@@ -65,6 +68,7 @@ services:
     volumes:
       - .:/workspace
       - web-node-modules:/workspace/node_modules
+      - pnpm-store:/pnpm/store
     depends_on: [api]
 
   relay:
@@ -72,11 +76,13 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: development
+    entrypoint: ["sh", "/workspace/docker/development-entrypoint.sh"]
     command: ["pnpm", "--filter", "@faq/api", "dev:relay"]
     env_file: [.env]
     volumes:
       - .:/workspace
       - relay-node-modules:/workspace/node_modules
+      - pnpm-store:/pnpm/store
     depends_on:
       postgres: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
@@ -86,11 +92,13 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: development
+    entrypoint: ["sh", "/workspace/docker/development-entrypoint.sh"]
     command: ["pnpm", "--filter", "@faq/api", "dev:worker"]
     env_file: [.env]
     volumes:
       - .:/workspace
       - worker-node-modules:/workspace/node_modules
+      - pnpm-store:/pnpm/store
     depends_on:
       postgres: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
@@ -102,3 +110,4 @@ volumes:
   web-node-modules:
   relay-node-modules:
   worker-node-modules:
+  pnpm-store:

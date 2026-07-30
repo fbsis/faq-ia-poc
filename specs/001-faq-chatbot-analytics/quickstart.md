@@ -36,6 +36,11 @@ pnpm install --frozen-lockfile
 docker compose up --build
 ```
 
+Development containers synchronize the workspace dependencies from `pnpm-lock.yaml` before
+starting their watch processes. Named `node_modules` volumes are therefore refreshed when a
+dependency changes without requiring the database or queue volumes to be deleted. A shared pnpm
+store volume reuses downloaded packages without writing package cache files into the repository.
+
 Expected healthy services:
 
 - web application;
