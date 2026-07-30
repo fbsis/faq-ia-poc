@@ -1,10 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
   ANSWER_INSTRUCTIONS,
-  ROUTING_INSTRUCTIONS
+  ROUTING_INSTRUCTIONS,
+  UNANSWERED_INSTRUCTIONS
 } from "../../../src/modules/chat/adapters/outbound/openai-conversation-agent.js";
 
 describe("grounded conversational answer instructions", () => {
+  it("presents the bot as a help and FAQ assistant focused on understanding", () => {
+    for (const instructions of [
+      ROUTING_INSTRUCTIONS,
+      ANSWER_INSTRUCTIONS,
+      UNANSWERED_INSTRUCTIONS
+    ]) {
+      expect(instructions).toMatch(/help and FAQ assistant/i);
+      expect(instructions).toMatch(/help people understand/i);
+    }
+  });
+
   it("allows helpful elaboration without inventing organization-specific facts", () => {
     expect(ANSWER_INSTRUCTIONS).toMatch(/general explanatory context/i);
     expect(ANSWER_INSTRUCTIONS).toMatch(/step-by-step/i);
