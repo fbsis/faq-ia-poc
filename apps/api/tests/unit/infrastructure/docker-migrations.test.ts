@@ -35,6 +35,9 @@ describe("Docker database migrations", () => {
     expect(dockerfile).toContain(
       "RUN pnpm --filter @faq/contracts build && pnpm --filter @faq/api build"
     );
+    expect(dockerfile).toContain(
+      "RUN pnpm deploy --legacy --filter @faq/api --prod /runtime"
+    );
     expect(dockerignore).toContain("**/*.tsbuildinfo");
   });
 });
